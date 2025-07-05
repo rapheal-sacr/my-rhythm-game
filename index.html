@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Rhythm Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
@@ -29,6 +29,7 @@
             font-family: 'Orbitron', sans-serif;
             color: #fff;
             overflow: hidden;
+            touch-action: manipulation;
         }
 
         .game-container {
@@ -101,8 +102,9 @@
             justify-content: space-around;
             padding: 10px 0;
             position: absolute;
-            bottom: calc(15% - 33px);
+            bottom: 5%; /* Lowered the circles */
             z-index: 5;
+            pointer-events: none;
         }
 
         .key {
@@ -137,7 +139,7 @@
             background-color: rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-evenly; /* Better vertical distribution */
             align-items: center;
             z-index: 20;
             text-align: center;
@@ -216,6 +218,20 @@
              display: flex;
              gap: 20px;
         }
+        
+        .touch-targets {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 25%;
+            display: flex;
+            z-index: 4;
+        }
+
+        .touch-lane {
+            flex-grow: 1;
+        }
 
     </style>
 </head>
@@ -237,6 +253,13 @@
             <div class="key key-2" id="key-display-1">S</div>
             <div class="key key-3" id="key-display-2">K</div>
             <div class="key key-4" id="key-display-3">L</div>
+        </div>
+        
+        <div class="touch-targets">
+            <div class="touch-lane" data-lane="0"></div>
+            <div class="touch-lane" data-lane="1"></div>
+            <div class="touch-lane" data-lane="2"></div>
+            <div class="touch-lane" data-lane="3"></div>
         </div>
 
         <div class="message-overlay" id="startScreen">
@@ -295,6 +318,7 @@
         const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
         const songSelector = document.getElementById('songSelector');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const touchLanes = document.querySelectorAll('.touch-lane');
         const keyDisplays = [
             document.getElementById('key-display-0'),
             document.getElementById('key-display-1'),
@@ -306,7 +330,7 @@
         const NUM_LANES = 4;
         const NOTE_COLORS = ['#00f2ff', '#ff2a6d', '#4aff2a', '#fff200'];
         const KEY_MAPPINGS = {'a': 0, 's': 1, 'k': 2, 'l': 3};
-        const HIT_LINE_Y_POSITION = 0.85;
+        const HIT_LINE_Y_POSITION = 0.75; // Raised the hit line
         let NOTE_OFFSET = 0.0; 
         const GAME_SPEED = 1.0; 
         const SONG_START_DELAY = 2.0; 
@@ -329,7 +353,6 @@
         let lastFrameTime = 0;
         let songList = [];
         let selectedSongData = null;
-        let metronomeEvents = [];
 
         // --- Audio Synthesis ---
         const synth = new Tone.MembraneSynth({
@@ -531,7 +554,7 @@
                             if (streak > maxStreak) maxStreak = streak;
                             showHitFeedback(lane, "Perfect!");
                         } else if (gameMode === 'calibrating') {
-                            const elapsedTime = (Date.now() - calibrationStartTime) / 1000;
+                            const elapsedTime = (Date.now() - masterClock) / 1000;
                             calibrationTaps.push(note.hitTime - elapsedTime);
                             streakDisplay.textContent = `Taps: ${calibrationTaps.length} / 15`;
                             if (calibrationTaps.length >= 15) {
@@ -559,7 +582,7 @@
             feedback.textContent = text;
             feedback.style.position = 'absolute';
             feedback.style.left = `${lane * laneWidth + laneWidth / 2}px`;
-            feedback.style.bottom = `${(1 - HIT_LINE_Y_POSITION) * 100}%`;
+            feedback.style.bottom = `${(1 - HIT_LINE_Y_POSITION) * 100 + 2}%`;
             feedback.style.transform = 'translateX(-50%)';
             feedback.style.color = NOTE_COLORS[lane];
             feedback.style.fontSize = '1.5rem';
@@ -610,7 +633,7 @@
             } else {
                 if (audioPlayer) audioPlayer.play();
                 if (gameMode === 'calibrating') {
-                    calibrationStartTime += Date.now() - (calibrationStartTime + (Tone.Transport.seconds * 1000));
+                    masterClock += Date.now() - lastFrameTime; // Recalculate clock after pause
                     Tone.Transport.start();
                 }
                 pauseScreen.style.display = 'none';
@@ -660,23 +683,21 @@
             scoreDisplay.textContent = 'Tap on the beat!';
             streakDisplay.textContent = 'Taps: 0 / 15';
             
-            // --- FIX: Use a simple loop and setTimeout for metronome to avoid Tone.Transport issues ---
+            Tone.Transport.cancel(0);
+
             for (let i = 0; i < 15; i++) {
-                const hitTime = 2.0 + i * 0.75; // Start after 2 seconds
+                const hitTime = 2.0 + i * 0.75;
                 notes.push({
                     lane: 1, hitTime: hitTime, y: 0,
                     color: NOTE_COLORS[1], active: true, hittable: true
                 });
-                setTimeout(() => {
-                    if (gameMode === 'calibrating' && !isPaused) {
-                         metronome.triggerAttackRelease("C5", "8n");
-                    }
-                }, hitTime * 1000);
+                metronome.triggerAttackRelease("C5", "8n", `+${hitTime}`);
             }
             
             masterClock = 0;
-            calibrationStartTime = Date.now();
             lastFrameTime = performance.now();
+            calibrationStartTime = lastFrameTime;
+            Tone.Transport.start();
             gameLoop();
         }
 
@@ -693,12 +714,6 @@
             goToMainMenu();
         }
         
-        function checkFilesLoaded() {
-            if (audioFileLoaded && beatmapFileLoaded) {
-                startButton.disabled = false;
-            }
-        }
-
         // --- Event Listeners ---
         window.addEventListener('resize', resizeCanvas);
         document.addEventListener('keydown', handleKeyPress);
@@ -797,6 +812,20 @@
         mainMenuButton.addEventListener('click', goToMainMenu);
         pauseButton.addEventListener('click', togglePause);
         resumeButton.addEventListener('click', togglePause);
+        
+        // Add touch/click listeners to the lanes
+        touchLanes.forEach(laneElement => {
+            const lane = parseInt(laneElement.dataset.lane, 10);
+            const handleTap = (event) => {
+                event.preventDefault();
+                if (gameMode === 'menu' || isPaused) return;
+                checkHit(lane);
+                animateKey(lane);
+            };
+            laneElement.addEventListener('mousedown', handleTap);
+            laneElement.addEventListener('touchstart', handleTap);
+        });
+
 
         // --- Initial Setup ---
         window.onload = () => {

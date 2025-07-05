@@ -17,6 +17,12 @@
       "artist": "Avicii",
       "audioUrl": "audio/Avicii - You Be Love (Rough Mix).mp3",
       "beatmapUrl": "beatmaps/Avicii - You Be Love (Rough Mix).json"
+    },
+    {
+      "title": "Silhouettes (Avicii's Exclusive Ralph Lauren Denim Supply Mix)",
+      "artist": "Avicii",
+      "audioUrl": "audio/Avicii - Silhouettes (Avicii's Exclusive Ralph Lauren Denim Supply Mix).mp3",
+      "beatmapUrl": "beatmaps/Avicii - Silhouettes (Avicii's Exclusive Ralph Lauren Denim Supply Mix).json"
     }
   ]
 }

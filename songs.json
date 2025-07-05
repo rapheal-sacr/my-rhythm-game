@@ -29,6 +29,12 @@
       "artist": "Avicii & Madonna",
       "audioUrl": "audio/Madonna - Wash All Over Me (Demo Undated).mp3",
       "beatmapUrl": "beatmaps/Madonna - Wash All Over Me (Demo Undated).json"
+    },
+    {
+      "title": "Without You",
+      "artist": "Avicii",
+      "audioUrl": "audio/Avicii - Without You.mp3",
+      "beatmapUrl": "beatmaps/Avicii - Without You.json"
     }
   ]
 }

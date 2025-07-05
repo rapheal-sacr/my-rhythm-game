@@ -247,6 +247,7 @@
                 <button class="difficulty-btn active" data-difficulty="Normal">Normal</button>
                 <button class="difficulty-btn" data-difficulty="Hard">Hard</button>
             </div>
+            <button id="loadSongsButton">Load Song List</button>
             <select id="songSelector" style="display: none;"></select>
             <button id="startButton" disabled>Start Game</button>
             <button id="calibrateButton">Calibrate Timing</button>
@@ -294,6 +295,7 @@
         const pauseDifficultyDisplay = document.getElementById('pauseDifficulty');
         const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
         const songSelector = document.getElementById('songSelector');
+        const loadSongsButton = document.getElementById('loadSongsButton');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
         const keyDisplays = [
             document.getElementById('key-display-0'),
@@ -309,7 +311,7 @@
         const HIT_LINE_Y_POSITION = 0.85;
         let NOTE_OFFSET = 0.0; 
         const GAME_SPEED = 1.0; 
-        const SONG_START_DELAY = 3.0; 
+        const SONG_START_DELAY = 2.0; 
         let laneWidth;
         let noteHeight;
         
@@ -329,6 +331,7 @@
         let lastFrameTime = 0;
         let songList = [];
         let selectedSongData = null;
+        let metronomeEvents = [];
 
         // --- Audio Synthesis ---
         const synth = new Tone.MembraneSynth({
@@ -659,13 +662,18 @@
             scoreDisplay.textContent = 'Tap on the beat!';
             streakDisplay.textContent = 'Taps: 0 / 15';
             
+            // --- FIX: Use a simple loop and setTimeout for metronome to avoid Tone.Transport issues ---
             for (let i = 0; i < 15; i++) {
                 const hitTime = 2.0 + i * 0.75; // Start after 2 seconds
                 notes.push({
                     lane: 1, hitTime: hitTime, y: 0,
                     color: NOTE_COLORS[1], active: true, hittable: true
                 });
-                metronome.triggerAttackRelease("C5", "8n", `+${hitTime}`);
+                setTimeout(() => {
+                    if (gameMode === 'calibrating' && !isPaused) {
+                         metronome.triggerAttackRelease("C5", "8n");
+                    }
+                }, hitTime * 1000);
             }
             
             masterClock = 0;
@@ -705,45 +713,83 @@
             });
         });
         
-        audioFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const blobUrl = URL.createObjectURL(file);
+        async function fetchAndLoadSong(songData) {
+             try {
+                const audioResponse = await fetch(songData.audioUrl);
+                if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
+                const audioBlob = await audioResponse.blob();
+                const blobUrl = URL.createObjectURL(audioBlob);
                 audioPlayer = new Audio(blobUrl);
                 audioPlayer.addEventListener('ended', gameOver);
-                audioFileLoaded = true;
-                checkFilesLoaded();
-            }
-        });
 
-        beatmapFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        beatData = JSON.parse(e.target.result);
-                        beatmapFileLoaded = true;
-                        checkFilesLoaded();
-                    } catch (err) {
-                        alert("Error parsing beatmap file. Make sure it's a valid JSON file.");
-                        beatmapFileLoaded = false;
-                    }
-                };
-                reader.readAsText(file);
+                const beatmapResponse = await fetch(songData.beatmapUrl);
+                if (!beatmapResponse.ok) throw new Error(`Failed to fetch beatmap file: ${beatmapResponse.status}`);
+                beatData = await beatmapResponse.json();
+                
+                startButton.disabled = false;
+                alert(`'${songData.title}' on ${currentDifficulty} is loaded and ready!`);
+
+             } catch(error) {
+                console.error("Error loading song:", error);
+                alert("Failed to load the selected song. Check the server and console for errors.");
+             }
+        }
+
+        async function loadSongList() {
+            try {
+                const response = await fetch('./songs.json');
+                if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+                
+                const data = await response.json();
+                songList = data.songs;
+
+                if (songList.length === 0) {
+                    alert("No songs found in the database (songs.json).");
+                    return;
+                }
+
+                songSelector.innerHTML = '<option value="">-- Select a Song --</option>';
+                songList.forEach((song, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${song.title} - ${song.artist}`;
+                    songSelector.appendChild(option);
+                });
+                songSelector.style.display = 'block';
+                startButton.disabled = true;
+
+            } catch (error) {
+                console.error("Error loading song list:", error);
+                alert("Failed to load song list from songs.json. Make sure the file exists and is formatted correctly.");
+            }
+        }
+
+        songSelector.addEventListener('change', (event) => {
+            const selectedIndex = event.target.value;
+            if (selectedIndex) {
+                selectedSongData = songList[selectedIndex];
+                fetchAndLoadSong(selectedSongData);
+            } else {
+                startButton.disabled = true;
             }
         });
 
         calibrateButton.addEventListener('click', () => {
-            Tone.start();
+            safeStartTone();
             startCalibration();
         });
 
         startButton.addEventListener('click', () => {
-            Tone.start();
+            safeStartTone();
             startScreen.style.display = 'none';
             init();
         });
+        
+        function safeStartTone() {
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+        }
 
         playAgainButton.addEventListener('click', () => {
             gameOverScreen.style.display = 'none';
@@ -759,6 +805,7 @@
             resizeCanvas();
             drawFretboard();
             drawHitLine();
+            loadSongList(); // Automatically load the song list
         };
 
     </script>

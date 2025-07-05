@@ -247,7 +247,6 @@
                 <button class="difficulty-btn active" data-difficulty="Normal">Normal</button>
                 <button class="difficulty-btn" data-difficulty="Hard">Hard</button>
             </div>
-            <button id="loadSongsButton">Load Song List</button>
             <select id="songSelector" style="display: none;"></select>
             <button id="startButton" disabled>Start Game</button>
             <button id="calibrateButton">Calibrate Timing</button>
@@ -295,7 +294,6 @@
         const pauseDifficultyDisplay = document.getElementById('pauseDifficulty');
         const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
         const songSelector = document.getElementById('songSelector');
-        const loadSongsButton = document.getElementById('loadSongsButton');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
         const keyDisplays = [
             document.getElementById('key-display-0'),

@@ -10,7 +10,7 @@
 
         :root {
             --color-1: #00f2ff;
-            --color-2: #ff2a6d;
+            --color-2: #ff2a6d;a
             --color-3: #4aff2a;
             --color-4: #fff200;
             --bg-color: #121212;
@@ -155,7 +155,7 @@
             margin-bottom: 20px;
         }
         
-        .message-overlay button, .message-overlay input[type="file"]::file-selector-button {
+        .message-overlay button, .message-overlay select {
             padding: 15px 30px;
             font-size: 1.5rem;
             font-family: 'Orbitron', sans-serif;
@@ -170,12 +170,14 @@
             margin-top: 10px;
         }
         
-        .message-overlay input[type="file"] {
-            font-size: 1.2rem;
-            color: #ccc;
+        .message-overlay select {
+            margin-bottom: 10px;
+            text-align: center;
+            width: 80%;
+            text-transform: none;
         }
 
-        .message-overlay button:hover, .message-overlay input[type="file"]::file-selector-button:hover {
+        .message-overlay button:hover {
             background-color: #ff5a8d;
         }
         
@@ -323,7 +325,8 @@
         let audioPlayer = null;
         let currentDifficulty = 'Normal';
         let calibrationTaps = [];
-        let calibrationStartTime = 0;
+        let masterClock = 0;
+        let lastFrameTime = 0;
         let songList = [];
         let selectedSongData = null;
 
@@ -386,6 +389,8 @@
                     if (gameMode === 'playing') audioPlayer.play();
                 }, SONG_START_DELAY * 1000);
             }
+            masterClock = -SONG_START_DELAY;
+            lastFrameTime = performance.now();
             gameLoop();
         }
         
@@ -393,11 +398,18 @@
         function gameLoop() {
             if (gameMode === 'menu' || isPaused) return;
             
-            let elapsedTime = -SONG_START_DELAY; 
-            if (gameMode === 'playing' && audioPlayer && audioPlayer.HAVE_CURRENT_DATA) {
-                 elapsedTime = audioPlayer.currentTime - SONG_START_DELAY;
-            } else if (gameMode === 'calibrating') {
-                elapsedTime = (Date.now() - calibrationStartTime) / 1000;
+            const now = performance.now();
+            const deltaTime = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+            
+            if (!isPaused) {
+                masterClock += deltaTime;
+            }
+
+            let elapsedTime = masterClock;
+            if (gameMode === 'playing' && audioPlayer && audioPlayer.played.length > 0) {
+                masterClock = audioPlayer.currentTime;
+                elapsedTime = masterClock;
             }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -601,6 +613,7 @@
                     Tone.Transport.start();
                 }
                 pauseScreen.style.display = 'none';
+                lastFrameTime = performance.now(); // Reset frame timer
                 gameLoop();
             }
         }
@@ -633,7 +646,7 @@
             pauseScreen.style.display = 'none';
             startScreen.style.display = 'flex';
             
-            loadSongList(); // --- FIX: Reload the song list when returning to menu ---
+            loadSongList(); 
         }
 
         // --- Calibration ---
@@ -647,7 +660,7 @@
             streakDisplay.textContent = 'Taps: 0 / 15';
             
             for (let i = 0; i < 15; i++) {
-                const hitTime = SONG_START_DELAY + i * 0.75;
+                const hitTime = 2.0 + i * 0.75; // Start after 2 seconds
                 notes.push({
                     lane: 1, hitTime: hitTime, y: 0,
                     color: NOTE_COLORS[1], active: true, hittable: true
@@ -655,7 +668,9 @@
                 metronome.triggerAttackRelease("C5", "8n", `+${hitTime}`);
             }
             
+            masterClock = 0;
             calibrationStartTime = Date.now();
+            lastFrameTime = performance.now();
             gameLoop();
         }
 
@@ -671,7 +686,7 @@
             }
             goToMainMenu();
         }
-
+        
         // --- Event Listeners ---
         window.addEventListener('resize', resizeCanvas);
         document.addEventListener('keydown', handleKeyPress);

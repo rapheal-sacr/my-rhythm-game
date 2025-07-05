@@ -1,0 +1,16 @@
+{
+  "songs": [
+    {
+      "title": "My First Song Title",
+      "artist": "Artist Name",
+      "audioUrl": "audio/my-first-song.mp3",
+      "beatmapUrl": "beatmaps/my-first-song.json"
+    },
+    {
+      "title": "Another Cool Song",
+      "artist": "Another Artist",
+      "audioUrl": "audio/another-song.mp3",
+      "beatmapUrl": "beatmaps/another-song.json"
+    }
+  ]
+}

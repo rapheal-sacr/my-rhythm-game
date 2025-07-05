@@ -155,7 +155,7 @@
             margin-bottom: 20px;
         }
         
-        .message-overlay button, .message-overlay input, .message-overlay select {
+        .message-overlay button, .message-overlay input[type="file"]::file-selector-button {
             padding: 15px 30px;
             font-size: 1.5rem;
             font-family: 'Orbitron', sans-serif;
@@ -170,17 +170,12 @@
             margin-top: 10px;
         }
         
-        .message-overlay input, .message-overlay select {
-            margin-bottom: 10px;
-            text-align: center;
-            width: 80%;
-        }
-        
-        .message-overlay select {
-            text-transform: none;
+        .message-overlay input[type="file"] {
+            font-size: 1.2rem;
+            color: #ccc;
         }
 
-        .message-overlay button:hover {
+        .message-overlay button:hover, .message-overlay input[type="file"]::file-selector-button:hover {
             background-color: #ff5a8d;
         }
         
@@ -638,9 +633,7 @@
             pauseScreen.style.display = 'none';
             startScreen.style.display = 'flex';
             
-            startButton.disabled = true;
-            songSelector.style.display = 'none';
-            songSelector.innerHTML = '';
+            loadSongList(); // --- FIX: Reload the song list when returning to menu ---
         }
 
         // --- Calibration ---
@@ -734,6 +727,7 @@
                     songSelector.appendChild(option);
                 });
                 songSelector.style.display = 'block';
+                startButton.disabled = true;
 
             } catch (error) {
                 console.error("Error loading song list:", error);

@@ -11,6 +11,12 @@
       "artist": "Avicii & Mike Posner",
       "audioUrl": "audio/AVICII X MIKE - Change A Thang.mp3",
       "beatmapUrl": "beatmaps/AVICII X MIKE - Change A Thang.json"
+    },
+    {
+      "title": "You Be Love (Rough Mix)",
+      "artist": "Avicii",
+      "audioUrl": "audio/Avicii - You Be Love (Rough Mix).mp3",
+      "beatmapUrl": "beatmaps/Avicii - You Be Love (Rough Mix).json"
     }
   ]
 }

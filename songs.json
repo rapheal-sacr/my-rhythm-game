@@ -1,10 +1,10 @@
 {
   "songs": [
     {
-      "title": "My First Song Title",
-      "artist": "Artist Name",
-      "audioUrl": "audio/my-first-song.mp3",
-      "beatmapUrl": "beatmaps/my-first-song.json"
+      "title": "Alive",
+      "artist": "Avicii & Wyclef Jean",
+      "audioUrl": "audio/Avicii & Wyclef Jean - Alive.mp3",
+      "beatmapUrl": "beatmaps/Avicii & Wyclef Jean - Alive.json"
     },
     {
       "title": "Another Cool Song",

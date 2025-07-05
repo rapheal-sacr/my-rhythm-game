@@ -23,6 +23,12 @@
       "artist": "Avicii",
       "audioUrl": "audio/Avicii - Silhouettes (Avicii's Exclusive Ralph Lauren Denim Supply Mix).mp3",
       "beatmapUrl": "beatmaps/Avicii - Silhouettes (Avicii's Exclusive Ralph Lauren Denim Supply Mix).json"
+    },
+    {
+      "title": "Wash All Over Me",
+      "artist": "Avicii & Madonna",
+      "audioUrl": "audio/Madonna - Wash All Over Me (Demo Undated).mp3",
+      "beatmapUrl": "beatmaps/Madonna - Wash All Over Me (Demo Undated).json"
     }
   ]
 }

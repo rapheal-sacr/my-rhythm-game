@@ -10,7 +10,7 @@
 
         :root {
             --color-1: #00f2ff;
-            --color-2: #ff2a6d;a
+            --color-2: #ff2a6d;
             --color-3: #4aff2a;
             --color-4: #fff200;
             --bg-color: #121212;
@@ -639,7 +639,7 @@
                 audioPlayer = null;
             }
             Tone.Transport.stop();
-            Tone.Transport.cancel();
+            Tone.Transport.cancel(0);
             cancelAnimationFrame(animationFrameId);
             
             gameOverScreen.style.display = 'none';
@@ -687,6 +687,12 @@
             goToMainMenu();
         }
         
+        function checkFilesLoaded() {
+            if (audioFileLoaded && beatmapFileLoaded) {
+                startButton.disabled = false;
+            }
+        }
+
         // --- Event Listeners ---
         window.addEventListener('resize', resizeCanvas);
         document.addEventListener('keydown', handleKeyPress);
@@ -699,64 +705,32 @@
             });
         });
         
-        async function fetchAndLoadSong(songData) {
-             try {
-                const audioResponse = await fetch(songData.audioUrl);
-                if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
-                const audioBlob = await audioResponse.blob();
-                const blobUrl = URL.createObjectURL(audioBlob);
+        audioFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const blobUrl = URL.createObjectURL(file);
                 audioPlayer = new Audio(blobUrl);
                 audioPlayer.addEventListener('ended', gameOver);
-
-                const beatmapResponse = await fetch(songData.beatmapUrl);
-                if (!beatmapResponse.ok) throw new Error(`Failed to fetch beatmap file: ${beatmapResponse.status}`);
-                beatData = await beatmapResponse.json();
-                
-                startButton.disabled = false;
-                alert(`'${songData.title}' on ${currentDifficulty} is loaded and ready!`);
-
-             } catch(error) {
-                console.error("Error loading song:", error);
-                alert("Failed to load the selected song. Check the server and console for errors.");
-             }
-        }
-
-        async function loadSongList() {
-            try {
-                const response = await fetch('./songs.json');
-                if (!response.ok) throw new Error(`Server responded with ${response.status}`);
-                
-                const data = await response.json();
-                songList = data.songs;
-
-                if (songList.length === 0) {
-                    alert("No songs found in the database (songs.json).");
-                    return;
-                }
-
-                songSelector.innerHTML = '<option value="">-- Select a Song --</option>';
-                songList.forEach((song, index) => {
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `${song.title} - ${song.artist}`;
-                    songSelector.appendChild(option);
-                });
-                songSelector.style.display = 'block';
-                startButton.disabled = true;
-
-            } catch (error) {
-                console.error("Error loading song list:", error);
-                alert("Failed to load song list from songs.json. Make sure the file exists and is formatted correctly.");
+                audioFileLoaded = true;
+                checkFilesLoaded();
             }
-        }
+        });
 
-        songSelector.addEventListener('change', (event) => {
-            const selectedIndex = event.target.value;
-            if (selectedIndex) {
-                selectedSongData = songList[selectedIndex];
-                fetchAndLoadSong(selectedSongData);
-            } else {
-                startButton.disabled = true;
+        beatmapFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        beatData = JSON.parse(e.target.result);
+                        beatmapFileLoaded = true;
+                        checkFilesLoaded();
+                    } catch (err) {
+                        alert("Error parsing beatmap file. Make sure it's a valid JSON file.");
+                        beatmapFileLoaded = false;
+                    }
+                };
+                reader.readAsText(file);
             }
         });
 
@@ -785,7 +759,6 @@
             resizeCanvas();
             drawFretboard();
             drawHitLine();
-            loadSongList(); // Automatically load the song list
         };
 
     </script>

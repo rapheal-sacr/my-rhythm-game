@@ -102,7 +102,7 @@
             justify-content: space-around;
             padding: 10px 0;
             position: absolute;
-            top: 72%; /* Shifted circles down */
+            top: 72%;
             z-index: 5;
             pointer-events: none;
         }
@@ -236,6 +236,10 @@
             text-shadow: 0 0 10px var(--star-color);
         }
         
+        #calibrateButton {
+            margin-top: 25px; /* Increased spacing */
+        }
+
         .touch-targets {
             position: absolute;
             bottom: 0;
@@ -351,7 +355,7 @@
         const NUM_LANES = 4;
         const NOTE_COLORS = ['#00f2ff', '#ff2a6d', '#4aff2a', '#fff200'];
         const KEY_MAPPINGS = {'a': 0, 's': 1, 'k': 2, 'l': 3};
-        const HIT_LINE_Y_POSITION = 0.70; // Shifted line down
+        const HIT_LINE_Y_POSITION = 0.70;
         let NOTE_OFFSET = 0.0; 
         const GAME_SPEED = 1.0; 
         const SONG_START_DELAY = 2.0; 

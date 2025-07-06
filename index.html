@@ -299,7 +299,7 @@
 
         <div class="message-overlay" id="pauseScreen" style="display: none;">
             <h1>Paused</h1>
-            <p id="pauseSongInfo"></p>
+            <p id="pauseDifficulty"></p>
             <div class="pause-menu-buttons">
                  <button id="resumeButton">Resume</button>
                  <button id="mainMenuButton">Main Menu</button>
@@ -310,7 +310,6 @@
             <h1>Game Over</h1>
             <div id="starRatingDisplay"></div>
             <p id="finalScore"></p>
-            <p id="highScoreResult"></p>
             <p id="finalStreak"></p>
             <p id="gameOverDifficulty"></p>
             <div class="game-over-buttons">
@@ -338,14 +337,13 @@
         const calibrateButton = document.getElementById('calibrateButton');
         const finalScoreDisplay = document.getElementById('finalScore');
         const finalStreakDisplay = document.getElementById('finalStreak');
-        const pauseSongInfo = document.getElementById('pauseSongInfo');
+        const pauseDifficultyDisplay = document.getElementById('pauseDifficulty');
         const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
         const songSelector = document.getElementById('songSelector');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
         const touchLanes = document.querySelectorAll('.touch-lane');
         const highScoreDisplay = document.getElementById('highScoreDisplay');
         const starRatingDisplay = document.getElementById('starRatingDisplay');
-        const highScoreResultDisplay = document.getElementById('highScoreResult');
         const keyDisplays = [
             document.getElementById('key-display-0'),
             document.getElementById('key-display-1'),
@@ -584,6 +582,7 @@
             const hitLineY = canvas.height * HIT_LINE_Y_POSITION;
             let noteToHit = null;
 
+            // Use forgiving "closest note" logic for Easy and Normal difficulties
             if (currentDifficulty === 'Easy' || currentDifficulty === 'Normal') {
                 const perfectRange = noteHeight * 1.5; 
                 let minDistance = Infinity;
@@ -596,7 +595,7 @@
                         }
                     }
                 }
-            } else { 
+            } else { // Use original, stricter logic for Hard difficulty
                 const perfectRange = noteHeight;
                 for (let i = notes.length - 1; i >= 0; i--) {
                     const note = notes[i];
@@ -610,6 +609,7 @@
                 }
             }
 
+            // If a note was found by either method, process the hit
             if (noteToHit) {
                 if (gameMode === 'playing') {
                     score += 10;
@@ -696,7 +696,7 @@
             }
             const statKey = `${selectedSongData.title}-${currentDifficulty}`;
             const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stars);
+            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
 
             highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
         }
@@ -710,13 +710,13 @@
                 if (audioPlayer) audioPlayer.pause();
                 if (gameMode === 'calibrating') {
                     Tone.Transport.pause();
-                    pauseSongInfo.textContent = 'Calibrating';
+                    pauseDifficultyDisplay.textContent = 'Calibrating';
                 } else {
                     let pauseText = `Difficulty: ${currentDifficulty}`;
                     if (selectedSongData) {
                         pauseText = `"${selectedSongData.title}"<br>${pauseText}`;
                     }
-                    pauseSongInfo.innerHTML = pauseText;
+                    pauseDifficultyDisplay.innerHTML = pauseText;
                 }
                 pauseScreen.style.display = 'flex';
             } else {
@@ -765,7 +765,6 @@
             }
 
             finalScoreDisplay.textContent = `Final Score: ${Math.max(0, score)}`;
-            highScoreResultDisplay.textContent = `High Score: ${bestStats.score}`;
             finalStreakDisplay.textContent = `Highest Streak: ${maxStreak}`;
             gameOverDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty} (${accuracy.toFixed(2)}%)`;
             gameOverScreen.style.display = 'flex';

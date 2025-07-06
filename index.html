@@ -145,7 +145,7 @@
             text-align: center;
             padding: 5px 20px 20px;
             box-sizing: border-box;
-            overflow-y: auto; /* Adds scrollbar only when content overflows */
+            overflow-y: auto; 
         }
 
         .message-overlay h1 {
@@ -316,8 +316,8 @@
         <div class="message-overlay" id="gameOverScreen" style="display: none;">
             <h1>Game Over</h1>
             <div id="starRatingDisplay"></div>
-            <p id="finalScore"></p>
             <p id="highScoreResult"></p>
+            <p id="finalScore"></p>
             <p id="finalStreak"></p>
             <p id="gameOverDifficulty"></p>
             <div class="game-over-buttons">
@@ -684,7 +684,7 @@
             }
             const statKey = `${selectedSongData.title}-${currentDifficulty}`;
             const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
+            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stars);
 
             highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
         }
@@ -751,6 +751,7 @@
             }
 
             finalScoreDisplay.textContent = `Final Score: ${Math.max(0, score)}`;
+            highScoreResultDisplay.textContent = `High Score: ${bestStats.score}`;
             finalStreakDisplay.textContent = `Highest Streak: ${maxStreak}`;
             gameOverDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty} (${accuracy.toFixed(2)}%)`;
             gameOverScreen.style.display = 'flex';

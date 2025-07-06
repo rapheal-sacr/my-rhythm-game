@@ -237,7 +237,7 @@
         }
         
         #calibrateButton {
-            margin-top: 25px; /* Increased spacing */
+            margin-top: 25px;
         }
 
         .touch-targets {
@@ -577,41 +577,46 @@
             keyDisplay.classList.add('active');
             setTimeout(() => keyDisplay.classList.remove('active'), 100);
         }
-
+        
+        // BUG FIX: Rewrote function to be more accurate and forgiving.
         function checkHit(lane) {
             const hitLineY = canvas.height * HIT_LINE_Y_POSITION;
-            const perfectRange = noteHeight; 
-            
-            let hit = false;
+            const perfectRange = noteHeight * 1.5; // Made hit window 50% bigger to be more forgiving
 
-            for (let i = notes.length - 1; i >= 0; i--) {
-                const note = notes[i];
+            let closestNote = null;
+            let minDistance = Infinity;
+
+            // First, find the single closest note to the hit line in the correct lane
+            for (const note of notes) {
                 if (note.lane === lane && note.hittable) {
                     const distance = Math.abs(note.y - hitLineY);
-                    
-                    if (distance <= perfectRange) {
-                        if (gameMode === 'playing') {
-                            score += 10;
-                            streak++;
-                            notesHit++;
-                            if (streak > maxStreak) maxStreak = streak;
-                            showHitFeedback(lane, "Perfect!");
-                        } else if (gameMode === 'calibrating') {
-                            const elapsedTime = (Date.now() - masterClock) / 1000;
-                            calibrationTaps.push(note.hitTime - elapsedTime);
-                            streakDisplay.textContent = `Taps: ${calibrationTaps.length} / 15`;
-                            if (calibrationTaps.length >= 15) {
-                                finishCalibration();
-                            }
-                        }
-                        note.hittable = false;
-                        hit = true;
-                        break;
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestNote = note;
                     }
                 }
             }
 
-            if (hit) {
+            // Now, check if that single closest note is actually within the hit range
+            if (closestNote && minDistance <= perfectRange) {
+                // A successful hit!
+                if (gameMode === 'playing') {
+                    score += 10;
+                    streak++;
+                    notesHit++;
+                    if (streak > maxStreak) maxStreak = streak;
+                    showHitFeedback(lane, "Perfect!");
+                } else if (gameMode === 'calibrating') {
+                    const elapsedTime = (Date.now() - masterClock) / 1000;
+                    calibrationTaps.push(closestNote.hitTime - elapsedTime);
+                    streakDisplay.textContent = `Taps: ${calibrationTaps.length} / 15`;
+                    if (calibrationTaps.length >= 15) {
+                        finishCalibration();
+                    }
+                }
+                closestNote.hittable = false; // Mark the note as hit so it can't be hit again
+
+                // Trigger sound and update display
                 synth.triggerAttackRelease("C1", "8n");
                 if (gameMode === 'playing') {
                     updateScoreDisplay();

@@ -71,6 +71,12 @@
       "artist": "Avicii",
       "audioUrl": "audio/Avicii - Dear Boy.mp3",
       "beatmapUrl": "beatmaps/Avicii - Dear Boy.json"
+    },
+    {
+      "title": "Billie Jean",
+      "artist": "Michael Jackson",
+      "audioUrl": "audio/01. Michael Jackson - Billie Jean.mp3",
+      "beatmapUrl": "beatmaps/01. Michael Jackson - Billie Jean.json"
     }
   ]
 }

@@ -53,6 +53,12 @@
       "artist": "Avicii & Sia",
       "audioUrl": "audio/My Marathon 1 (Avicii Tape) work.mp3",
       "beatmapUrl": "beatmaps/My Marathon 1 (Avicii Tape) work.json"
+    },
+    {
+      "title": "Lonely Together",
+      "artist": "Avicii & Rita Ora",
+      "audioUrl": "audio/Avicii - Lonely Together ft. Rita Ora.mp3",
+      "beatmapUrl": "beatmaps/Avicii - Lonely Together ft. Rita Ora.json"
     }
   ]
 }

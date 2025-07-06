@@ -41,6 +41,12 @@
       "artist": "Avicii & Kacey Musgraves",
       "audioUrl": "audio/Avicii feat. Kacey Musgraves - Let's Ride Away 44.1 KHz 16 Bit MASTER FINAL (From v13).mp3",
       "beatmapUrl": "beatmaps/Avicii feat. Kacey Musgraves - Let's Ride Away 44.1 KHz 16 Bit MASTER FINAL (From v13).json"
+    },
+    {
+      "title": "Don't Know Why",
+      "artist": "Avicii & Moncrieff",
+      "audioUrl": "audio/Dont_Know_Why_2.mp3",
+      "beatmapUrl": "beatmaps/Dont_Know_Why_2.json"
     }
   ]
 }

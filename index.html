@@ -613,9 +613,8 @@
         }
 
         function resetStreak(missedLane) {
-            if (streak > 0) {
-                showHitFeedback(missedLane, "Miss");
-            }
+            // BUG FIX: Always show "Miss" feedback, not just when breaking a streak.
+            showHitFeedback(missedLane, "Miss");
             streak = 0;
             updateStreakDisplay();
         }
@@ -828,7 +827,7 @@
 
 
         // --- Initial Setup ---
-        window.onload =_=> {
+        window.onload = _=> {
             resizeCanvas();
             drawFretboard();
             drawHitLine();

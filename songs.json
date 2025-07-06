@@ -65,6 +65,12 @@
       "artist": "Avicii",
       "audioUrl": "audio/Avicii - City Lights.mp3",
       "beatmapUrl": "beatmaps/Avicii - City Lights.json"
+    },
+    {
+      "title": "Dear Boy",
+      "artist": "Avicii",
+      "audioUrl": "audio/Avicii - Dear Boy.mp3",
+      "beatmapUrl": "beatmaps/Avicii - Dear Boy.json"
     }
   ]
 }

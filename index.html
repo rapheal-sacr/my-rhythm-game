@@ -157,6 +157,10 @@
             margin-bottom: 20px;
         }
         
+        #pauseScreen p {
+            margin: 5px 0; /* Tighter spacing for pause menu text */
+        }
+        
         .message-overlay button, .message-overlay select {
             padding: 15px 30px;
             font-size: 1.5rem;
@@ -212,6 +216,7 @@
             flex-direction: column;
             align-items: center;
             gap: 15px;
+            margin-top: 20px;
         }
         
         .game-over-buttons {
@@ -299,6 +304,7 @@
 
         <div class="message-overlay" id="pauseScreen" style="display: none;">
             <h1>Paused</h1>
+            <p id="pauseSongTitle" style="font-size: 1.4rem; font-weight: bold;"></p>
             <p id="pauseDifficulty"></p>
             <div class="pause-menu-buttons">
                  <button id="resumeButton">Resume</button>
@@ -337,6 +343,7 @@
         const calibrateButton = document.getElementById('calibrateButton');
         const finalScoreDisplay = document.getElementById('finalScore');
         const finalStreakDisplay = document.getElementById('finalStreak');
+        const pauseSongTitle = document.getElementById('pauseSongTitle');
         const pauseDifficultyDisplay = document.getElementById('pauseDifficulty');
         const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
         const songSelector = document.getElementById('songSelector');
@@ -410,7 +417,6 @@
 
         // --- Game Initialization ---
         function init() {
-            // Clean up the old audio player and create a fresh one for each game.
             if (audioPlayer) {
                 audioPlayer.pause();
                 audioPlayer.removeEventListener('ended', gameOver);
@@ -452,7 +458,7 @@
             if (audioPlayer) {
                 audioPlayer.currentTime = 0;
                 setTimeout(() => {
-                    if (gameMode === 'playing') audioPlayer.play();
+                    if (gameMode === 'playing' && !isPaused) audioPlayer.play();
                 }, SONG_START_DELAY * 1000);
             }
             masterClock = -SONG_START_DELAY;
@@ -462,18 +468,16 @@
         
         // --- Game Loop ---
         function gameLoop() {
-            if (gameMode === 'menu' || isPaused) return;
+            if (gameMode !== 'playing' || isPaused) return;
             
             const now = performance.now();
             const deltaTime = (now - lastFrameTime) / 1000;
             lastFrameTime = now;
             
-            if (!isPaused) {
-                masterClock += deltaTime;
-            }
+            masterClock += deltaTime;
 
             let elapsedTime = masterClock;
-            if (gameMode === 'playing' && audioPlayer && audioPlayer.played.length > 0) {
+            if (audioPlayer && audioPlayer.played.length > 0) {
                 masterClock = audioPlayer.currentTime;
                 elapsedTime = masterClock;
             }
@@ -483,10 +487,6 @@
             drawHitLine();
             handleNotes(elapsedTime);
             
-            if (gameMode === 'calibrating' && notes.length > 0 && elapsedTime > notes[notes.length - 1].hitTime + 2) {
-                finishCalibration();
-            }
-
             animationFrameId = requestAnimationFrame(gameLoop);
         }
 
@@ -558,7 +558,7 @@
         function handleKeyPress(e) {
             const key = e.key.toLowerCase();
 
-            if (key === 'p' && (gameMode !== 'menu')) {
+            if (key === 'p' && (gameMode !== 'menu' && gameMode !== 'calibrating')) {
                 togglePause();
                 return;
             }
@@ -580,53 +580,38 @@
 
         function checkHit(lane) {
             const hitLineY = canvas.height * HIT_LINE_Y_POSITION;
-            let noteToHit = null;
+            const perfectRange = noteHeight; 
+            
+            let hit = false;
 
-            // Use forgiving "closest note" logic for Easy and Normal difficulties
-            if (currentDifficulty === 'Easy' || currentDifficulty === 'Normal') {
-                const perfectRange = noteHeight * 1.5; 
-                let minDistance = Infinity;
-                for (const note of notes) {
-                    if (note.lane === lane && note.hittable) {
-                        const distance = Math.abs(note.y - hitLineY);
-                        if (distance < minDistance && distance <= perfectRange) {
-                            minDistance = distance;
-                            noteToHit = note;
+            for (let i = notes.length - 1; i >= 0; i--) {
+                const note = notes[i];
+                if (note.lane === lane && note.hittable) {
+                    const distance = Math.abs(note.y - hitLineY);
+                    
+                    if (distance <= perfectRange) {
+                        if (gameMode === 'playing') {
+                            score += 10;
+                            streak++;
+                            notesHit++;
+                            if (streak > maxStreak) maxStreak = streak;
+                            showHitFeedback(lane, "Perfect!");
+                        } else if (gameMode === 'calibrating') {
+                            const elapsedTime = (Date.now() - masterClock) / 1000;
+                            calibrationTaps.push(note.hitTime - elapsedTime);
+                            streakDisplay.textContent = `Taps: ${calibrationTaps.length} / 15`;
+                            if (calibrationTaps.length >= 15) {
+                                finishCalibration();
+                            }
                         }
-                    }
-                }
-            } else { // Use original, stricter logic for Hard difficulty
-                const perfectRange = noteHeight;
-                for (let i = notes.length - 1; i >= 0; i--) {
-                    const note = notes[i];
-                    if (note.lane === lane && note.hittable) {
-                        const distance = Math.abs(note.y - hitLineY);
-                        if (distance <= perfectRange) {
-                            noteToHit = note;
-                            break; 
-                        }
+                        note.hittable = false;
+                        hit = true;
+                        break;
                     }
                 }
             }
 
-            // If a note was found by either method, process the hit
-            if (noteToHit) {
-                if (gameMode === 'playing') {
-                    score += 10;
-                    streak++;
-                    notesHit++;
-                    if (streak > maxStreak) maxStreak = streak;
-                    showHitFeedback(lane, "Perfect!");
-                } else if (gameMode === 'calibrating') {
-                    const elapsedTime = (Date.now() - masterClock) / 1000;
-                    calibrationTaps.push(noteToHit.hitTime - elapsedTime);
-                    streakDisplay.textContent = `Taps: ${calibrationTaps.length} / 15`;
-                    if (calibrationTaps.length >= 15) {
-                        finishCalibration();
-                    }
-                }
-                noteToHit.hittable = false; 
-
+            if (hit) {
                 synth.triggerAttackRelease("C1", "8n");
                 if (gameMode === 'playing') {
                     updateScoreDisplay();
@@ -703,31 +688,22 @@
 
         // --- Game State Management ---
         function togglePause() {
-            if (gameMode === 'menu') return;
+            if (gameMode !== 'playing') return;
             isPaused = !isPaused;
+
             if (isPaused) {
                 cancelAnimationFrame(animationFrameId);
                 if (audioPlayer) audioPlayer.pause();
-                if (gameMode === 'calibrating') {
-                    Tone.Transport.pause();
-                    pauseDifficultyDisplay.textContent = 'Calibrating';
-                } else {
-                    let pauseText = `Difficulty: ${currentDifficulty}`;
-                    if (selectedSongData) {
-                        pauseText = `"${selectedSongData.title}"<br>${pauseText}`;
-                    }
-                    pauseDifficultyDisplay.innerHTML = pauseText;
-                }
+                
+                pauseSongTitle.textContent = selectedSongData ? `"${selectedSongData.title}"` : '';
+                pauseDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty}`;
+                
                 pauseScreen.style.display = 'flex';
             } else {
-                if (audioPlayer) audioPlayer.play();
-                if (gameMode === 'calibrating') {
-                    masterClock += Date.now() - lastFrameTime;
-                    Tone.Transport.start();
-                }
-                pauseScreen.style.display = 'none';
                 lastFrameTime = performance.now();
                 gameLoop();
+                if (audioPlayer) audioPlayer.play();
+                pauseScreen.style.display = 'none';
             }
         }
 

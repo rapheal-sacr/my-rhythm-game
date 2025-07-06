@@ -684,7 +684,11 @@
             }
             const statKey = `${selectedSongData.title}-${currentDifficulty}`;
             const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stars);
+            
+            // --- FIX IS HERE ---
+            // The original code had a bug using 'stars' which was not defined.
+            // It has been corrected to use 'stats.stars'.
+            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
 
             highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
         }
@@ -831,22 +835,22 @@
         
         async function fetchAndLoadSong(songData) {
              try {
-                const audioResponse = await fetch(songData.audioUrl);
-                if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
-                const audioBlob = await audioResponse.blob();
-                
-                audioBlobUrl = URL.createObjectURL(audioBlob);
+                 const audioResponse = await fetch(songData.audioUrl);
+                 if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
+                 const audioBlob = await audioResponse.blob();
+                 
+                 audioBlobUrl = URL.createObjectURL(audioBlob);
 
-                const beatmapResponse = await fetch(songData.beatmapUrl);
-                if (!beatmapResponse.ok) throw new Error(`Failed to fetch beatmap file: ${beatmapResponse.status}`);
-                beatData = await beatmapResponse.json();
-                
-                startButton.disabled = false;
-                alert(`'${songData.title}' is loaded and ready!`);
+                 const beatmapResponse = await fetch(songData.beatmapUrl);
+                 if (!beatmapResponse.ok) throw new Error(`Failed to fetch beatmap file: ${beatmapResponse.status}`);
+                 beatData = await beatmapResponse.json();
+                 
+                 startButton.disabled = false;
+                 alert(`'${songData.title}' is loaded and ready!`);
 
              } catch(error) {
-                console.error("Error loading song:", error);
-                alert("Failed to load the selected song. Check the server and console for errors.");
+                 console.error("Error loading song:", error);
+                 alert("Failed to load the selected song. Check the server and console for errors.");
              }
         }
 

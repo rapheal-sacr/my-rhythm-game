@@ -77,6 +77,12 @@
       "artist": "Michael Jackson",
       "audioUrl": "audio/01. Michael Jackson - Billie Jean.mp3",
       "beatmapUrl": "beatmaps/01. Michael Jackson - Billie Jean.json"
+    },
+    {
+      "title": "Free Bird",
+      "artist": "Lynyrd Skynyrd",
+      "audioUrl": "audio/LynyrdSkynyrd-FreeBird.mp3",
+      "beatmapUrl": "beatmaps/LynyrdSkynyrd-FreeBird.json"
     }
   ]
 }

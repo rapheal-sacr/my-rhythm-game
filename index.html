@@ -370,6 +370,7 @@
         let animationFrameId;
         let beatData = null;
         let audioPlayer = null;
+        let audioBlobUrl = null; // Stores the loaded audio URL
         let currentDifficulty = 'Normal';
         let calibrationTaps = [];
         let masterClock = 0;
@@ -405,6 +406,17 @@
 
         // --- Game Initialization ---
         function init() {
+            // BUG FIX: Clean up the old audio player and create a fresh one for each game.
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.removeEventListener('ended', gameOver);
+                audioPlayer = null;
+            }
+            if (audioBlobUrl) {
+                audioPlayer = new Audio(audioBlobUrl);
+                audioPlayer.addEventListener('ended', gameOver);
+            }
+
             resizeCanvas();
             notes = [];
             score = 0;
@@ -696,7 +708,7 @@
             if (gameMode !== 'playing') return;
             gameMode = 'menu';
             isPaused = false;
-            if (audioPlayer) audioPlayer.pause();
+            // The audio player is paused in the init() function of the next game
             cancelAnimationFrame(animationFrameId);
 
             // Calculate performance and get stars
@@ -799,9 +811,9 @@
                 const audioResponse = await fetch(songData.audioUrl);
                 if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
                 const audioBlob = await audioResponse.blob();
-                const blobUrl = URL.createObjectURL(audioBlob);
-                audioPlayer = new Audio(blobUrl);
-                audioPlayer.addEventListener('ended', gameOver);
+                
+                // BUG FIX: Store the blob URL, don't create the Audio object here.
+                audioBlobUrl = URL.createObjectURL(audioBlob);
 
                 const beatmapResponse = await fetch(songData.beatmapUrl);
                 if (!beatmapResponse.ok) throw new Error(`Failed to fetch beatmap file: ${beatmapResponse.status}`);

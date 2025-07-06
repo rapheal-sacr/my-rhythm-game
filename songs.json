@@ -59,6 +59,12 @@
       "artist": "Avicii & Rita Ora",
       "audioUrl": "audio/Avicii - Lonely Together ft. Rita Ora.mp3",
       "beatmapUrl": "beatmaps/Avicii - Lonely Together ft. Rita Ora.json"
+    },
+    {
+      "title": "City Lights",
+      "artist": "Avicii",
+      "audioUrl": "audio/Avicii - City Lights.mp3",
+      "beatmapUrl": "beatmaps/Avicii - City Lights.json"
     }
   ]
 }

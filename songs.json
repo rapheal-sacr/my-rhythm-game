@@ -47,6 +47,12 @@
       "artist": "Avicii & Moncrieff",
       "audioUrl": "audio/Dont_Know_Why_2.mp3",
       "beatmapUrl": "beatmaps/Dont_Know_Why_2.json"
+    },
+    {
+      "title": "Marathon",
+      "artist": "Avicii & Sia",
+      "audioUrl": "audio/My Marathon 1 (Avicii Tape) work.mp3",
+      "beatmapUrl": "beatmaps/My Marathon 1 (Avicii Tape) work.json"
     }
   ]
 }

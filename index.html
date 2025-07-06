@@ -299,7 +299,7 @@
 
         <div class="message-overlay" id="pauseScreen" style="display: none;">
             <h1>Paused</h1>
-            <p id="pauseDifficulty"></p>
+            <p id="pauseSongInfo"></p>
             <div class="pause-menu-buttons">
                  <button id="resumeButton">Resume</button>
                  <button id="mainMenuButton">Main Menu</button>
@@ -310,6 +310,7 @@
             <h1>Game Over</h1>
             <div id="starRatingDisplay"></div>
             <p id="finalScore"></p>
+            <p id="highScoreResult"></p>
             <p id="finalStreak"></p>
             <p id="gameOverDifficulty"></p>
             <div class="game-over-buttons">
@@ -337,13 +338,14 @@
         const calibrateButton = document.getElementById('calibrateButton');
         const finalScoreDisplay = document.getElementById('finalScore');
         const finalStreakDisplay = document.getElementById('finalStreak');
-        const pauseDifficultyDisplay = document.getElementById('pauseDifficulty');
+        const pauseSongInfo = document.getElementById('pauseSongInfo');
         const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
         const songSelector = document.getElementById('songSelector');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
         const touchLanes = document.querySelectorAll('.touch-lane');
         const highScoreDisplay = document.getElementById('highScoreDisplay');
         const starRatingDisplay = document.getElementById('starRatingDisplay');
+        const highScoreResultDisplay = document.getElementById('highScoreResult');
         const keyDisplays = [
             document.getElementById('key-display-0'),
             document.getElementById('key-display-1'),
@@ -577,29 +579,38 @@
             keyDisplay.classList.add('active');
             setTimeout(() => keyDisplay.classList.remove('active'), 100);
         }
-        
-        // BUG FIX: Rewrote function to be more accurate and forgiving.
+
         function checkHit(lane) {
             const hitLineY = canvas.height * HIT_LINE_Y_POSITION;
-            const perfectRange = noteHeight * 1.5; // Made hit window 50% bigger to be more forgiving
+            let noteToHit = null;
 
-            let closestNote = null;
-            let minDistance = Infinity;
-
-            // First, find the single closest note to the hit line in the correct lane
-            for (const note of notes) {
-                if (note.lane === lane && note.hittable) {
-                    const distance = Math.abs(note.y - hitLineY);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestNote = note;
+            if (currentDifficulty === 'Easy' || currentDifficulty === 'Normal') {
+                const perfectRange = noteHeight * 1.5; 
+                let minDistance = Infinity;
+                for (const note of notes) {
+                    if (note.lane === lane && note.hittable) {
+                        const distance = Math.abs(note.y - hitLineY);
+                        if (distance < minDistance && distance <= perfectRange) {
+                            minDistance = distance;
+                            noteToHit = note;
+                        }
+                    }
+                }
+            } else { 
+                const perfectRange = noteHeight;
+                for (let i = notes.length - 1; i >= 0; i--) {
+                    const note = notes[i];
+                    if (note.lane === lane && note.hittable) {
+                        const distance = Math.abs(note.y - hitLineY);
+                        if (distance <= perfectRange) {
+                            noteToHit = note;
+                            break; 
+                        }
                     }
                 }
             }
 
-            // Now, check if that single closest note is actually within the hit range
-            if (closestNote && minDistance <= perfectRange) {
-                // A successful hit!
+            if (noteToHit) {
                 if (gameMode === 'playing') {
                     score += 10;
                     streak++;
@@ -608,15 +619,14 @@
                     showHitFeedback(lane, "Perfect!");
                 } else if (gameMode === 'calibrating') {
                     const elapsedTime = (Date.now() - masterClock) / 1000;
-                    calibrationTaps.push(closestNote.hitTime - elapsedTime);
+                    calibrationTaps.push(noteToHit.hitTime - elapsedTime);
                     streakDisplay.textContent = `Taps: ${calibrationTaps.length} / 15`;
                     if (calibrationTaps.length >= 15) {
                         finishCalibration();
                     }
                 }
-                closestNote.hittable = false; // Mark the note as hit so it can't be hit again
+                noteToHit.hittable = false; 
 
-                // Trigger sound and update display
                 synth.triggerAttackRelease("C1", "8n");
                 if (gameMode === 'playing') {
                     updateScoreDisplay();
@@ -686,7 +696,7 @@
             }
             const statKey = `${selectedSongData.title}-${currentDifficulty}`;
             const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
+            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stars);
 
             highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
         }
@@ -698,8 +708,16 @@
             if (isPaused) {
                 cancelAnimationFrame(animationFrameId);
                 if (audioPlayer) audioPlayer.pause();
-                if (gameMode === 'calibrating') Tone.Transport.pause();
-                pauseDifficultyDisplay.textContent = gameMode === 'playing' ? `Difficulty: ${currentDifficulty}` : 'Calibrating';
+                if (gameMode === 'calibrating') {
+                    Tone.Transport.pause();
+                    pauseSongInfo.textContent = 'Calibrating';
+                } else {
+                    let pauseText = `Difficulty: ${currentDifficulty}`;
+                    if (selectedSongData) {
+                        pauseText = `"${selectedSongData.title}"<br>${pauseText}`;
+                    }
+                    pauseSongInfo.innerHTML = pauseText;
+                }
                 pauseScreen.style.display = 'flex';
             } else {
                 if (audioPlayer) audioPlayer.play();
@@ -722,24 +740,32 @@
             }
             cancelAnimationFrame(animationFrameId);
 
-            // Calculate performance and get stars
             const accuracy = totalNotes > 0 ? (notesHit / totalNotes) * 100 : 0;
             const { stars, starString } = getStarRating(accuracy);
             starRatingDisplay.textContent = starString;
 
-            // Save high score and star rating
             const statKey = `${selectedSongData.title}-${currentDifficulty}`;
             const bestStats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
+            let isNewHighScore = false;
+
             if (score > bestStats.score) {
                 bestStats.score = score;
+                isNewHighScore = true;
             }
             if (stars > bestStats.stars) {
                 bestStats.stars = stars;
             }
             localStorage.setItem(statKey, JSON.stringify(bestStats));
 
-            // Display final stats
+            const gameOverTitle = gameOverScreen.querySelector('h1');
+            if (isNewHighScore) {
+                gameOverTitle.textContent = "New High Score!";
+            } else {
+                gameOverTitle.textContent = "Game Over";
+            }
+
             finalScoreDisplay.textContent = `Final Score: ${Math.max(0, score)}`;
+            highScoreResultDisplay.textContent = `High Score: ${bestStats.score}`;
             finalStreakDisplay.textContent = `Highest Streak: ${maxStreak}`;
             gameOverDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty} (${accuracy.toFixed(2)}%)`;
             gameOverScreen.style.display = 'flex';
@@ -823,7 +849,6 @@
                 if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
                 const audioBlob = await audioResponse.blob();
                 
-                // Store the blob URL, don't create the Audio object here.
                 audioBlobUrl = URL.createObjectURL(audioBlob);
 
                 const beatmapResponse = await fetch(songData.beatmapUrl);

@@ -143,7 +143,7 @@
             align-items: center;
             z-index: 20;
             text-align: center;
-            padding: 100px 20px 20px;
+            padding: 80px 20px 20px; /* Moved content up */
             box-sizing: border-box;
         }
 
@@ -406,7 +406,7 @@
 
         // --- Game Initialization ---
         function init() {
-            // BUG FIX: Clean up the old audio player and create a fresh one for each game.
+            // Clean up the old audio player and create a fresh one for each game.
             if (audioPlayer) {
                 audioPlayer.pause();
                 audioPlayer.removeEventListener('ended', gameOver);
@@ -708,7 +708,9 @@
             if (gameMode !== 'playing') return;
             gameMode = 'menu';
             isPaused = false;
-            // The audio player is paused in the init() function of the next game
+            if (audioPlayer) {
+                audioPlayer.pause();
+            }
             cancelAnimationFrame(animationFrameId);
 
             // Calculate performance and get stars
@@ -812,7 +814,7 @@
                 if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
                 const audioBlob = await audioResponse.blob();
                 
-                // BUG FIX: Store the blob URL, don't create the Audio object here.
+                // Store the blob URL, don't create the Audio object here.
                 audioBlobUrl = URL.createObjectURL(audioBlob);
 
                 const beatmapResponse = await fetch(songData.beatmapUrl);

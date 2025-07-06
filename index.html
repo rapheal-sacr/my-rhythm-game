@@ -15,7 +15,7 @@
             --color-4: #fff200;
             --bg-color: #121212;
             --fretboard-bg: #282828;
-            --hit-line-glow: 0 0 15px 5px;
+            --star-color: #fdd835;
         }
 
         body {
@@ -102,7 +102,7 @@
             justify-content: space-around;
             padding: 10px 0;
             position: absolute;
-            top: 67%; /* Moved circles below the new hit line */
+            top: 67%; 
             z-index: 5;
             pointer-events: none;
         }
@@ -136,14 +136,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
-            justify-content: flex-start; /* Aligns content to the top */
+            justify-content: flex-start;
             align-items: center;
             z-index: 20;
             text-align: center;
-            padding: 100px 20px 20px; /* Pushes content down from the top */
+            padding: 100px 20px 20px;
             box-sizing: border-box;
         }
 
@@ -218,13 +218,30 @@
              display: flex;
              gap: 20px;
         }
+
+        #highScoreDisplay {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            background-color: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            min-height: 50px; /* Ensures layout doesn't shift */
+        }
+
+        #starRatingDisplay {
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+            color: var(--star-color);
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px var(--star-color);
+        }
         
         .touch-targets {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 35%; /* Increased touch area height */
+            height: 35%;
             display: flex;
             z-index: 4;
         }
@@ -271,6 +288,7 @@
                 <button class="difficulty-btn" data-difficulty="Hard">Hard</button>
             </div>
             <select id="songSelector" style="display: none;"></select>
+            <div id="highScoreDisplay"></div>
             <button id="startButton" disabled>Start Game</button>
             <button id="calibrateButton">Calibrate Timing</button>
         </div>
@@ -286,6 +304,7 @@
 
         <div class="message-overlay" id="gameOverScreen" style="display: none;">
             <h1>Game Over</h1>
+            <div id="starRatingDisplay"></div>
             <p id="finalScore"></p>
             <p id="finalStreak"></p>
             <p id="gameOverDifficulty"></p>
@@ -319,6 +338,8 @@
         const songSelector = document.getElementById('songSelector');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
         const touchLanes = document.querySelectorAll('.touch-lane');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const starRatingDisplay = document.getElementById('starRatingDisplay');
         const keyDisplays = [
             document.getElementById('key-display-0'),
             document.getElementById('key-display-1'),
@@ -330,7 +351,7 @@
         const NUM_LANES = 4;
         const NOTE_COLORS = ['#00f2ff', '#ff2a6d', '#4aff2a', '#fff200'];
         const KEY_MAPPINGS = {'a': 0, 's': 1, 'k': 2, 'l': 3};
-        const HIT_LINE_Y_POSITION = 0.65; // Raised the hit line
+        const HIT_LINE_Y_POSITION = 0.65;
         let NOTE_OFFSET = 0.0; 
         const GAME_SPEED = 1.0; 
         const SONG_START_DELAY = 2.0; 
@@ -342,6 +363,8 @@
         let score = 0;
         let streak = 0;
         let maxStreak = 0;
+        let notesHit = 0;
+        let totalNotes = 0;
         let gameMode = 'menu'; 
         let isPaused = false;
         let animationFrameId;
@@ -387,6 +410,8 @@
             score = 0;
             streak = 0;
             maxStreak = 0;
+            notesHit = 0;
+            totalNotes = 0;
             gameMode = 'playing';
             isPaused = false;
             updateScoreDisplay();
@@ -395,6 +420,7 @@
             pauseScreen.style.display = 'none';
             
             if (beatData && beatData[currentDifficulty]) {
+                totalNotes = beatData[currentDifficulty].length;
                 beatData[currentDifficulty].forEach(beat => {
                     notes.push({
                         lane: beat.lane,
@@ -551,6 +577,7 @@
                         if (gameMode === 'playing') {
                             score += 10;
                             streak++;
+                            notesHit++;
                             if (streak > maxStreak) maxStreak = streak;
                             showHitFeedback(lane, "Perfect!");
                         } else if (gameMode === 'calibrating') {
@@ -613,10 +640,34 @@
         }
 
         function resetStreak(missedLane) {
-            // BUG FIX: Always show "Miss" feedback, not just when breaking a streak.
             showHitFeedback(missedLane, "Miss");
             streak = 0;
             updateStreakDisplay();
+        }
+        
+        // --- Star Rating and High Score Logic ---
+        function getStarRating(percentage) {
+            let stars = 0;
+            if (percentage >= 100) stars = 5;
+            else if (percentage >= 90) stars = 4;
+            else if (percentage >= 75) stars = 3;
+            else if (percentage >= 50) stars = 2;
+            else if (percentage > 0) stars = 1;
+            
+            const starString = '⭐️'.repeat(stars) + '☆'.repeat(5 - stars);
+            return { stars, starString };
+        }
+
+        function updateSongStatsDisplay() {
+            if (!selectedSongData) {
+                highScoreDisplay.innerHTML = '';
+                return;
+            }
+            const statKey = `${selectedSongData.title}-${currentDifficulty}`;
+            const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
+            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
+
+            highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
         }
 
         // --- Game State Management ---
@@ -632,11 +683,11 @@
             } else {
                 if (audioPlayer) audioPlayer.play();
                 if (gameMode === 'calibrating') {
-                    masterClock += Date.now() - lastFrameTime; // Recalculate clock after pause
+                    masterClock += Date.now() - lastFrameTime;
                     Tone.Transport.start();
                 }
                 pauseScreen.style.display = 'none';
-                lastFrameTime = performance.now(); // Reset frame timer
+                lastFrameTime = performance.now();
                 gameLoop();
             }
         }
@@ -647,9 +698,27 @@
             isPaused = false;
             if (audioPlayer) audioPlayer.pause();
             cancelAnimationFrame(animationFrameId);
-            finalScoreDisplay.textContent = `Your Final Score: ${Math.max(0, score)}`;
+
+            // Calculate performance and get stars
+            const accuracy = totalNotes > 0 ? (notesHit / totalNotes) * 100 : 0;
+            const { stars, starString } = getStarRating(accuracy);
+            starRatingDisplay.textContent = starString;
+
+            // Save high score and star rating
+            const statKey = `${selectedSongData.title}-${currentDifficulty}`;
+            const bestStats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
+            if (score > bestStats.score) {
+                bestStats.score = score;
+            }
+            if (stars > bestStats.stars) {
+                bestStats.stars = stars;
+            }
+            localStorage.setItem(statKey, JSON.stringify(bestStats));
+
+            // Display final stats
+            finalScoreDisplay.textContent = `Final Score: ${Math.max(0, score)}`;
             finalStreakDisplay.textContent = `Highest Streak: ${maxStreak}`;
-            gameOverDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty}`;
+            gameOverDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty} (${accuracy.toFixed(2)}%)`;
             gameOverScreen.style.display = 'flex';
         }
         
@@ -669,7 +738,7 @@
             pauseScreen.style.display = 'none';
             startScreen.style.display = 'flex';
             
-            loadSongList(); 
+            updateSongStatsDisplay();
         }
 
         // --- Calibration ---
@@ -695,7 +764,6 @@
             
             masterClock = 0;
             lastFrameTime = performance.now();
-            calibrationStartTime = lastFrameTime;
             Tone.Transport.start();
             gameLoop();
         }
@@ -722,6 +790,7 @@
                 difficultyButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 currentDifficulty = button.dataset.difficulty;
+                updateSongStatsDisplay();
             });
         });
         
@@ -739,7 +808,7 @@
                 beatData = await beatmapResponse.json();
                 
                 startButton.disabled = false;
-                alert(`'${songData.title}' on ${currentDifficulty} is loaded and ready!`);
+                alert(`'${songData.title}' is loaded and ready!`);
 
              } catch(error) {
                 console.error("Error loading song:", error);
@@ -781,8 +850,11 @@
             if (selectedIndex) {
                 selectedSongData = songList[selectedIndex];
                 fetchAndLoadSong(selectedSongData);
+                updateSongStatsDisplay();
             } else {
+                selectedSongData = null;
                 startButton.disabled = true;
+                updateSongStatsDisplay();
             }
         });
 
@@ -812,7 +884,6 @@
         pauseButton.addEventListener('click', togglePause);
         resumeButton.addEventListener('click', togglePause);
         
-        // Add touch/click listeners to the lanes
         touchLanes.forEach(laneElement => {
             const lane = parseInt(laneElement.dataset.lane, 10);
             const handleTap = (event) => {
@@ -825,13 +896,12 @@
             laneElement.addEventListener('touchstart', handleTap);
         });
 
-
         // --- Initial Setup ---
         window.onload = _=> {
             resizeCanvas();
             drawFretboard();
             drawHitLine();
-            loadSongList(); // Automatically load the song list
+            loadSongList();
         };
 
     </script>

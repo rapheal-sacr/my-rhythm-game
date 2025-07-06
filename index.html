@@ -143,8 +143,9 @@
             align-items: center;
             z-index: 20;
             text-align: center;
-            padding: 0 20px 20px;
+            padding: 5px 20px 20px;
             box-sizing: border-box;
+            overflow-y: auto; /* Adds scrollbar only when content overflows */
         }
 
         .message-overlay h1 {
@@ -156,9 +157,9 @@
             font-size: 1.2rem;
             margin-bottom: 20px;
         }
-        
+
         #pauseScreen p {
-            margin: 5px 0; /* Tighter spacing for pause menu text */
+            margin: 5px 0;
         }
         
         .message-overlay button, .message-overlay select {
@@ -316,6 +317,7 @@
             <h1>Game Over</h1>
             <div id="starRatingDisplay"></div>
             <p id="finalScore"></p>
+            <p id="highScoreResult"></p>
             <p id="finalStreak"></p>
             <p id="gameOverDifficulty"></p>
             <div class="game-over-buttons">
@@ -351,6 +353,7 @@
         const touchLanes = document.querySelectorAll('.touch-lane');
         const highScoreDisplay = document.getElementById('highScoreDisplay');
         const starRatingDisplay = document.getElementById('starRatingDisplay');
+        const highScoreResultDisplay = document.getElementById('highScoreResult');
         const keyDisplays = [
             document.getElementById('key-display-0'),
             document.getElementById('key-display-1'),
@@ -688,21 +691,28 @@
 
         // --- Game State Management ---
         function togglePause() {
-            if (gameMode !== 'playing') return;
+            if (gameMode !== 'playing' && gameMode !== 'calibrating') return;
             isPaused = !isPaused;
 
             if (isPaused) {
                 cancelAnimationFrame(animationFrameId);
                 if (audioPlayer) audioPlayer.pause();
+                if(gameMode === 'calibrating') Tone.Transport.pause();
                 
-                pauseSongTitle.textContent = selectedSongData ? `"${selectedSongData.title}"` : '';
-                pauseDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty}`;
+                if (gameMode === 'playing') {
+                    pauseSongTitle.textContent = selectedSongData ? `Song: "${selectedSongData.title}"` : '';
+                    pauseDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty}`;
+                } else {
+                     pauseSongTitle.textContent = 'System Calibration';
+                     pauseDifficultyDisplay.textContent = 'Tap on the beat';
+                }
                 
                 pauseScreen.style.display = 'flex';
             } else {
                 lastFrameTime = performance.now();
                 gameLoop();
                 if (audioPlayer) audioPlayer.play();
+                if (gameMode === 'calibrating') Tone.Transport.start();
                 pauseScreen.style.display = 'none';
             }
         }

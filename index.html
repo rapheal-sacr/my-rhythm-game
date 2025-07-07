@@ -241,10 +241,6 @@
             margin-bottom: 15px;
             text-shadow: 0 0 10px var(--star-color);
         }
-        
-        #calibrateButton {
-            margin-top: 25px;
-        }
 
         .touch-targets {
             position: absolute;
@@ -300,13 +296,13 @@
             <select id="songSelector" style="display: none;"></select>
             <div id="highScoreDisplay"></div>
             <button id="startButton" disabled>Start Game</button>
-            <button id="calibrateButton">Calibrate Timing</button>
         </div>
 
         <div class="message-overlay" id="pauseScreen" style="display: none;">
             <h1>Paused</h1>
-            <p id="pauseSongTitle" style="font-size: 1.4rem; font-weight: bold;"></p>
-            <p id="pauseDifficulty"></p>
+            <p id="pauseSongTitle" style="font-size: 1.4rem; font-weight: bold; margin-bottom: 0;"></p>
+            <p id="pauseArtistName" style="font-size: 1.1rem; margin-top: 4px;"></p>
+            <p id="pauseDifficulty" style="margin-top: 15px;"></p>
             <div class="pause-menu-buttons">
                  <button id="resumeButton">Resume</button>
                  <button id="mainMenuButton">Main Menu</button>
@@ -342,10 +338,10 @@
         const pauseButton = document.getElementById('pauseButton');
         const resumeButton = document.getElementById('resumeButton');
         const mainMenuButton = document.getElementById('mainMenuButton');
-        const calibrateButton = document.getElementById('calibrateButton');
         const finalScoreDisplay = document.getElementById('finalScore');
         const finalStreakDisplay = document.getElementById('finalStreak');
         const pauseSongTitle = document.getElementById('pauseSongTitle');
+        const pauseArtistName = document.getElementById('pauseArtistName');
         const pauseDifficultyDisplay = document.getElementById('pauseDifficulty');
         const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
         const songSelector = document.getElementById('songSelector');
@@ -366,7 +362,6 @@
         const NOTE_COLORS = ['#00f2ff', '#ff2a6d', '#4aff2a', '#fff200'];
         const KEY_MAPPINGS = {'a': 0, 's': 1, 'k': 2, 'l': 3};
         const HIT_LINE_Y_POSITION = 0.70;
-        let NOTE_OFFSET = 0.0; 
         const GAME_SPEED = 1.0; 
         const SONG_START_DELAY = 2.0; 
         let laneWidth;
@@ -386,7 +381,6 @@
         let audioPlayer = null;
         let audioBlobUrl = null; 
         let currentDifficulty = 'Normal';
-        let calibrationTaps = [];
         let masterClock = 0;
         let lastFrameTime = 0;
         let songList = [];
@@ -402,11 +396,6 @@
                 decay: 0.5,
                 sustain: 0,
             }
-        }).toDestination();
-        const metronome = new Tone.Synth({
-            oscillator: { type: 'sine' },
-            volume: -6,
-            envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 }
         }).toDestination();
 
         // --- Sizing and Responsiveness ---
@@ -539,7 +528,7 @@
                 const note = notes[i];
                 if (!note.active) continue;
 
-                const effectiveElapsedTime = elapsedTime + (gameMode === 'playing' ? NOTE_OFFSET : 0);
+                const effectiveElapsedTime = elapsedTime;
                 const timeToHit = note.hitTime - effectiveElapsedTime;
                 const distanceFromHitLine = timeToHit * pixelsPerSecond;
                 note.y = hitLineY - distanceFromHitLine;
@@ -561,7 +550,7 @@
         function handleKeyPress(e) {
             const key = e.key.toLowerCase();
 
-            if (key === 'p' && (gameMode !== 'menu' && gameMode !== 'calibrating')) {
+            if (key === 'p' && gameMode !== 'menu') {
                 togglePause();
                 return;
             }
@@ -599,13 +588,6 @@
                             notesHit++;
                             if (streak > maxStreak) maxStreak = streak;
                             showHitFeedback(lane, "Perfect!");
-                        } else if (gameMode === 'calibrating') {
-                            const elapsedTime = (Date.now() - masterClock) / 1000;
-                            calibrationTaps.push(note.hitTime - elapsedTime);
-                            streakDisplay.textContent = `Taps: ${calibrationTaps.length} / 15`;
-                            if (calibrationTaps.length >= 15) {
-                                finishCalibration();
-                            }
                         }
                         note.hittable = false;
                         hit = true;
@@ -684,10 +666,6 @@
             }
             const statKey = `${selectedSongData.title}-${currentDifficulty}`;
             const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            
-            // --- FIX IS HERE ---
-            // The original code had a bug using 'stars' which was not defined.
-            // It has been corrected to use 'stats.stars'.
             const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
 
             highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
@@ -695,28 +673,24 @@
 
         // --- Game State Management ---
         function togglePause() {
-            if (gameMode !== 'playing' && gameMode !== 'calibrating') return;
+            if (gameMode !== 'playing') return;
             isPaused = !isPaused;
 
             if (isPaused) {
                 cancelAnimationFrame(animationFrameId);
                 if (audioPlayer) audioPlayer.pause();
-                if(gameMode === 'calibrating') Tone.Transport.pause();
                 
-                if (gameMode === 'playing') {
-                    pauseSongTitle.textContent = selectedSongData ? `Song: "${selectedSongData.title}"` : '';
-                    pauseDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty}`;
-                } else {
-                     pauseSongTitle.textContent = 'System Calibration';
-                     pauseDifficultyDisplay.textContent = 'Tap on the beat';
+                if (selectedSongData) {
+                    pauseSongTitle.textContent = `"${selectedSongData.title}"`;
+                    pauseArtistName.textContent = `by ${selectedSongData.artist}`;
                 }
                 
+                pauseDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty}`;
                 pauseScreen.style.display = 'flex';
             } else {
                 lastFrameTime = performance.now();
                 gameLoop();
                 if (audioPlayer) audioPlayer.play();
-                if (gameMode === 'calibrating') Tone.Transport.start();
                 pauseScreen.style.display = 'none';
             }
         }
@@ -769,8 +743,6 @@
                 audioPlayer.removeEventListener('ended', gameOver);
                 audioPlayer = null;
             }
-            Tone.Transport.stop();
-            Tone.Transport.cancel(0);
             cancelAnimationFrame(animationFrameId);
             
             gameOverScreen.style.display = 'none';
@@ -778,46 +750,6 @@
             startScreen.style.display = 'flex';
             
             updateSongStatsDisplay();
-        }
-
-        // --- Calibration ---
-        function startCalibration() {
-            resizeCanvas();
-            notes = [];
-            calibrationTaps = [];
-            gameMode = 'calibrating';
-            startScreen.style.display = 'none';
-            scoreDisplay.textContent = 'Tap on the beat!';
-            streakDisplay.textContent = 'Taps: 0 / 15';
-            
-            Tone.Transport.cancel(0);
-
-            for (let i = 0; i < 15; i++) {
-                const hitTime = 2.0 + i * 0.75;
-                notes.push({
-                    lane: 1, hitTime: hitTime, y: 0,
-                    color: NOTE_COLORS[1], active: true, hittable: true
-                });
-                metronome.triggerAttackRelease("C5", "8n", `+${hitTime}`);
-            }
-            
-            masterClock = 0;
-            lastFrameTime = performance.now();
-            Tone.Transport.start();
-            gameLoop();
-        }
-
-        function finishCalibration() {
-            if (gameMode !== 'calibrating') return;
-            
-            if (calibrationTaps.length > 3) { 
-                const averageError = calibrationTaps.reduce((a, b) => a + b, 0) / calibrationTaps.length;
-                NOTE_OFFSET = -averageError; 
-                alert(`Calibration complete! Your timing offset of ${NOTE_OFFSET.toFixed(4)}s has been applied.`);
-            } else {
-                alert("Not enough taps recorded. Calibration cancelled.");
-            }
-            goToMainMenu();
         }
         
         // --- Event Listeners ---
@@ -894,11 +826,6 @@
                 startButton.disabled = true;
                 updateSongStatsDisplay();
             }
-        });
-
-        calibrateButton.addEventListener('click', () => {
-            safeStartTone();
-            startCalibration();
         });
 
         startButton.addEventListener('click', () => {

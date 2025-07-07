@@ -83,6 +83,12 @@
       "artist": "Lynyrd Skynyrd",
       "audioUrl": "audio/LynyrdSkynyrd-FreeBird.mp3",
       "beatmapUrl": "beatmaps/LynyrdSkynyrd-FreeBird.json"
+    },
+    {
+      "title": "Starry Nights",
+      "artist": "Game Dev",
+      "audioUrl": "audio/Starry Nights.mp3",
+      "beatmapUrl": "beatmaps/Starry Nights.json"
     }
   ]
 }

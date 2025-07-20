@@ -89,6 +89,12 @@
       "artist": "Game Dev",
       "audioUrl": "audio/Starry Nights.mp3",
       "beatmapUrl": "beatmaps/Starry Nights.json"
+    },
+    {
+      "title": "Megalovania Remix",
+      "artist": "Toby Fox",
+      "audioUrl": "audio/megalovania remix.mp3",
+      "beatmapUrl": "beatmaps/megalovania remix.mp3"
     }
   ]
 }

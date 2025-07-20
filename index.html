@@ -392,7 +392,7 @@
         const missSoundURL = "https://github.com/rapheal-sacr/my-rhythm-game/raw/refs/heads/main/audio/yugen%20combobreak.wav";
 
         const hitSoundPlayer = new Audio(hitSoundURL);
-        hitSoundPlayer.volume = 0.5; // Set volume to max
+        hitSoundPlayer.volume = 1.0; // Set volume to max
 
         const missSoundPlayer = new Audio(missSoundURL);
         missSoundPlayer.volume = 1.0; // Set volume to max
@@ -675,7 +675,7 @@
             }
             const statKey = `${selectedSongData.title}-${currentDifficulty}`;
             const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stars);
+            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
 
             highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
         }

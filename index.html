@@ -3,270 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Rhythm Game</title>
+    <title>Rhythm Game - Beatmap Creator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-
         :root {
-            --color-1: #00f2ff;
-            --color-2: #ff2a6d;
-            --color-3: #4aff2a;
-            --color-4: #fff200;
-            --bg-color: #121212;
-            --fretboard-bg: #282828;
-            --star-color: #fdd835;
+            --color-1: #00f2ff; --color-2: #ff2a6d; --color-3: #4aff2a;
+            --color-4: #fff200; --bg-color: #121212; --fretboard-bg: #282828;
         }
-
         body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: var(--bg-color);
-            font-family: 'Orbitron', sans-serif;
-            color: #fff;
-            overflow: hidden;
+            margin: 0; padding: 0; display: flex; justify-content: center;
+            align-items: center; height: 100vh; background-color: var(--bg-color);
+            font-family: 'Orbitron', sans-serif; color: #fff; overflow: hidden;
             touch-action: manipulation;
         }
-
         .game-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            position: relative; width: 100%; max-width: 500px; height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
             justify-content: space-between;
         }
-
         .game-header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
+            width: 100%; display: flex; justify-content: space-between;
+            align-items: center; padding: 20px; box-sizing: border-box;
             background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
             z-index: 10;
         }
-        
-        .header-left {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .score-display, .streak-display {
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-shadow: 0 0 10px #fff;
-        }
-        
+        .note-count-display { font-size: 1.5rem; font-weight: 700; text-shadow: 0 0 10px #fff; }
         .pause-button {
-            font-size: 2rem;
-            font-weight: bold;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 2px solid white;
-            border-radius: 50%;
-            transition: all 0.2s ease;
+            font-size: 2rem; font-weight: bold; cursor: pointer; width: 40px;
+            height: 40px; display: flex; justify-content: center; align-items: center;
+            border: 2px solid white; border-radius: 50%; transition: all 0.2s ease;
         }
-
-        .pause-button:hover {
-            background-color: white;
-            color: var(--bg-color);
-        }
-
+        .pause-button:hover { background-color: white; color: var(--bg-color); }
         canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--fretboard-bg);
-            border-radius: 10px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--fretboard-bg); border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-
         .hit-keys-display {
-            display: flex;
-            width: 100%;
-            justify-content: space-around;
-            padding: 10px 0;
-            position: absolute;
-            top: 72%;
-            z-index: 5;
+            display: flex; width: 100%; justify-content: space-around;
+            padding: 10px 0; position: absolute; top: 72%; z-index: 5;
             pointer-events: none;
         }
-
         .key {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.8rem;
-            font-weight: bold;
-            border: 3px solid;
-            transition: all 0.05s ease;
+            width: 60px; height: 60px; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; font-size: 1.8rem;
+            font-weight: bold; border: 3px solid; transition: all 0.05s ease;
         }
-
         .key.key-1 { border-color: var(--color-1); color: var(--color-1); }
         .key.key-2 { border-color: var(--color-2); color: var(--color-2); }
         .key.key-3 { border-color: var(--color-3); color: var(--color-3); }
         .key.key-4 { border-color: var(--color-4); color: var(--color-4); }
-
-        .key.active {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px, inset 0 0 10px;
-        }
-
+        .key.active { transform: scale(1.1); box-shadow: 0 0 20px, inset 0 0 10px; }
         .message-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            z-index: 20;
-            text-align: center;
-            padding: 5px 20px 20px;
-            box-sizing: border-box;
-            overflow-y: auto; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 20;
+            text-align: center; padding: 20px; box-sizing: border-box;
         }
-
-        .message-overlay h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-        
-        .message-overlay p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
-
-        #pauseScreen p {
-            margin: 5px 0;
-        }
-        
-        .message-overlay button, .message-overlay select {
-            padding: 15px 30px;
-            font-size: 1.5rem;
-            font-family: 'Orbitron', sans-serif;
-            background-color: var(--color-2);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: background-color 0.2s;
-            box-shadow: 0 0 15px var(--color-2);
+        .message-overlay h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .message-overlay p { font-size: 1.2rem; margin-bottom: 20px; max-width: 90%; }
+        .message-overlay button, .message-overlay input {
+            padding: 15px 30px; font-size: 1.2rem; font-family: 'Orbitron', sans-serif;
+            background-color: var(--color-2); color: white; border: none;
+            border-radius: 10px; cursor: pointer; text-transform: uppercase;
+            transition: background-color 0.2s; box-shadow: 0 0 15px var(--color-2);
             margin-top: 10px;
         }
-        
-        .message-overlay select {
-            margin-bottom: 10px;
-            text-align: center;
+        .message-overlay input[type="number"] {
             width: 80%;
-            text-transform: none;
+            max-width: 300px;
+            text-align: center;
+            -moz-appearance: textfield;
         }
-
-        .message-overlay button:hover {
-            background-color: #ff5a8d;
+        .message-overlay input::-webkit-outer-spin-button,
+        .message-overlay input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
         }
-        
-        .message-overlay button:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        
-        .difficulty-selector {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .difficulty-selector button {
-            font-size: 1rem;
-            padding: 10px 20px;
-            background-color: #444;
-        }
-        
-        .difficulty-selector button.active {
-            background-color: var(--color-3);
-            box-shadow: 0 0 15px var(--color-3);
-        }
-
-        .pause-menu-buttons {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .game-over-buttons {
-             display: flex;
-             gap: 20px;
-        }
-
-        #highScoreDisplay {
-            margin-top: 20px;
-            font-size: 1.2rem;
-            background-color: rgba(0,0,0,0.3);
-            padding: 10px 20px;
-            border-radius: 8px;
-            min-height: 50px;
-        }
-
-        #starRatingDisplay {
-            font-size: 2.5rem;
-            letter-spacing: 5px;
-            color: var(--star-color);
-            margin-bottom: 15px;
-            text-shadow: 0 0 10px var(--star-color);
-        }
-
+        .message-overlay button:hover { background-color: #ff5a8d; }
+        .message-overlay button:disabled { background-color: #555; cursor: not-allowed; box-shadow: none; }
+        .difficulty-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .difficulty-selector button { font-size: 1rem; padding: 10px 20px; background-color: #444; }
+        .difficulty-selector button.active { background-color: var(--color-3); box-shadow: 0 0 15px var(--color-3); }
         .touch-targets {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 35%;
-            display: flex;
-            z-index: 4;
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            height: 35%; display: flex; z-index: 4;
         }
-
-        .touch-lane {
-            flex-grow: 1;
-        }
-
+        .touch-lane { flex-grow: 1; }
     </style>
 </head>
 <body>
-
     <div class="game-container">
         <div class="game-header">
-            <div class="header-left">
-                <div class="score-display">Score: 0</div>
-                <div class="streak-display">Streak: 0</div>
-            </div>
-            <div class="pause-button" id="pauseButton">||</div>
+            <div class="note-count-display">Notes: 0</div>
+            <div class="pause-button" id="pauseButton" style="display: none;">||</div>
         </div>
         
         <canvas id="gameCanvas"></canvas>
@@ -286,40 +117,25 @@
         </div>
 
         <div class="message-overlay" id="startScreen">
-            <h1>Rhythm Game</h1>
-            <p>Choose a difficulty, then a song to play.</p>
+            <h1>Beatmap Creator</h1>
+            <p>Upload a song, enter its BPM, then play along to create a new beatmap.</p>
+            
+            <input type="file" id="songUploader" accept="audio/*">
+            <input type="number" id="bpmInput" placeholder="Enter Song BPM">
+            
             <div class="difficulty-selector">
                 <button class="difficulty-btn" data-difficulty="Easy">Easy</button>
                 <button class="difficulty-btn active" data-difficulty="Normal">Normal</button>
                 <button class="difficulty-btn" data-difficulty="Hard">Hard</button>
             </div>
-            <select id="songSelector" style="display: none;"></select>
-            <div id="highScoreDisplay"></div>
-            <button id="startButton" disabled>Start Game</button>
+
+            <button id="startButton" disabled>Start Creating</button>
         </div>
 
-        <div class="message-overlay" id="pauseScreen" style="display: none;">
-            <h1>Paused</h1>
-            <p id="pauseSongTitle" style="font-size: 1.4rem; font-weight: bold; margin-bottom: 0;"></p>
-            <p id="pauseArtistName" style="font-size: 1.1rem; margin-top: 4px;"></p>
-            <p id="pauseDifficulty" style="margin-top: 15px;"></p>
-            <div class="pause-menu-buttons">
-                 <button id="resumeButton">Resume</button>
-                 <button id="mainMenuButton">Main Menu</button>
-            </div>
-        </div>
-
-        <div class="message-overlay" id="gameOverScreen" style="display: none;">
-            <h1>Game Over</h1>
-            <div id="starRatingDisplay"></div>
-            <p id="highScoreResult"></p>
-            <p id="finalScore"></p>
-            <p id="finalStreak"></p>
-            <p id="gameOverDifficulty"></p>
-            <div class="game-over-buttons">
-                <button id="playAgainButton">Play Again</button>
-                <button id="mainMenuButtonGameOver">Main Menu</button>
-            </div>
+        <div class="message-overlay" id="resultsScreen" style="display: none;">
+            <h1>Download Complete!</h1>
+            <p>Your quantized beatmap has been downloaded as a JSON file.</p>
+            <button id="mainMenuButton">Create Another</button>
         </div>
     </div>
 
@@ -327,29 +143,16 @@
         // --- DOM Elements ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.querySelector('.score-display');
-        const streakDisplay = document.querySelector('.streak-display');
+        const noteCountDisplay = document.querySelector('.note-count-display');
         const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const pauseScreen = document.getElementById('pauseScreen');
+        const resultsScreen = document.getElementById('resultsScreen');
         const startButton = document.getElementById('startButton');
-        const playAgainButton = document.getElementById('playAgainButton');
-        const mainMenuButtonGameOver = document.getElementById('mainMenuButtonGameOver');
-        const pauseButton = document.getElementById('pauseButton');
-        const resumeButton = document.getElementById('resumeButton');
         const mainMenuButton = document.getElementById('mainMenuButton');
-        const finalScoreDisplay = document.getElementById('finalScore');
-        const finalStreakDisplay = document.getElementById('finalStreak');
-        const pauseSongTitle = document.getElementById('pauseSongTitle');
-        const pauseArtistName = document.getElementById('pauseArtistName');
-        const pauseDifficultyDisplay = document.getElementById('pauseDifficulty');
-        const gameOverDifficultyDisplay = document.getElementById('gameOverDifficulty');
-        const songSelector = document.getElementById('songSelector');
+        const pauseButton = document.getElementById('pauseButton');
+        const songUploader = document.getElementById('songUploader');
+        const bpmInput = document.getElementById('bpmInput');
         const difficultyButtons = document.querySelectorAll('.difficulty-btn');
         const touchLanes = document.querySelectorAll('.touch-lane');
-        const highScoreDisplay = document.getElementById('highScoreDisplay');
-        const starRatingDisplay = document.getElementById('starRatingDisplay');
-        const highScoreResultDisplay = document.getElementById('highScoreResult');
         const keyDisplays = [
             document.getElementById('key-display-0'),
             document.getElementById('key-display-1'),
@@ -369,34 +172,15 @@
         
         // --- Game State ---
         let notes = [];
-        let score = 0;
-        let streak = 0;
-        let maxStreak = 0;
-        let notesHit = 0;
-        let totalNotes = 0;
+        let recordedBeatmap = [];
         let gameMode = 'menu'; 
         let isPaused = false;
         let animationFrameId;
-        let beatData = null;
         let audioPlayer = null;
         let audioBlobUrl = null; 
         let currentDifficulty = 'Normal';
         let masterClock = 0;
         let lastFrameTime = 0;
-        let songList = [];
-        let selectedSongData = null;
-
-        // --- Audio Synthesis ---
-        const synth = new Tone.MembraneSynth({
-            pitchDecay: 0.01,
-            octaves: 6,
-            volume: 0, 
-            envelope: {
-                attack: 0.001,
-                decay: 0.5,
-                sustain: 0,
-            }
-        }).toDestination();
 
         // --- Sizing and Responsiveness ---
         function resizeCanvas() {
@@ -407,52 +191,35 @@
             noteHeight = laneWidth * 0.5;
         }
 
-        // --- Game Initialization ---
-        function init() {
-            if (audioPlayer) {
-                audioPlayer.pause();
-                audioPlayer.removeEventListener('ended', gameOver);
-                audioPlayer = null;
+        // --- Game Initialization for Creator ---
+        function initCreator() {
+            if (!audioBlobUrl) {
+                alert("Please select a song first.");
+                return;
             }
-            if (audioBlobUrl) {
-                audioPlayer = new Audio(audioBlobUrl);
-                audioPlayer.addEventListener('ended', gameOver);
+             const bpm = parseFloat(bpmInput.value);
+            if (!bpm || bpm <= 0) {
+                alert("Please enter a valid BPM.");
+                return;
             }
+
+            audioPlayer = new Audio(audioBlobUrl);
+            audioPlayer.addEventListener('ended', generateBeatmapFile);
 
             resizeCanvas();
             notes = [];
-            score = 0;
-            streak = 0;
-            maxStreak = 0;
-            notesHit = 0;
-            totalNotes = 0;
-            gameMode = 'playing';
+            recordedBeatmap = [];
+            gameMode = 'creating';
             isPaused = false;
-            updateScoreDisplay();
-            updateStreakDisplay();
-            gameOverScreen.style.display = 'none';
-            pauseScreen.style.display = 'none';
+            updateNoteCountDisplay();
+            startScreen.style.display = 'none';
+            pauseButton.style.display = 'flex';
             
-            if (beatData && beatData[currentDifficulty]) {
-                totalNotes = beatData[currentDifficulty].length;
-                beatData[currentDifficulty].forEach(beat => {
-                    notes.push({
-                        lane: beat.lane,
-                        hitTime: beat.time,
-                        y: 0,
-                        color: NOTE_COLORS[beat.lane],
-                        active: true,
-                        hittable: true
-                    });
-                });
-            }
+            audioPlayer.currentTime = 0;
+            setTimeout(() => {
+                if (gameMode === 'creating' && !isPaused) audioPlayer.play();
+            }, SONG_START_DELAY * 1000);
             
-            if (audioPlayer) {
-                audioPlayer.currentTime = 0;
-                setTimeout(() => {
-                    if (gameMode === 'playing' && !isPaused) audioPlayer.play();
-                }, SONG_START_DELAY * 1000);
-            }
             masterClock = -SONG_START_DELAY;
             lastFrameTime = performance.now();
             gameLoop();
@@ -460,19 +227,17 @@
         
         // --- Game Loop ---
         function gameLoop() {
-            if (gameMode !== 'playing' || isPaused) return;
+            if (gameMode !== 'creating' || isPaused) return;
             
             const now = performance.now();
             const deltaTime = (now - lastFrameTime) / 1000;
             lastFrameTime = now;
             
             masterClock += deltaTime;
-
-            let elapsedTime = masterClock;
             if (audioPlayer && audioPlayer.played.length > 0) {
                 masterClock = audioPlayer.currentTime;
-                elapsedTime = masterClock;
             }
+            const elapsedTime = masterClock;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawFretboard();
@@ -510,57 +275,39 @@
             ctx.fillStyle = note.color;
             ctx.shadowColor = note.color;
             ctx.shadowBlur = 15;
-            
             const x = note.lane * laneWidth;
             ctx.beginPath();
             ctx.roundRect(x + laneWidth * 0.1, note.y - (noteHeight / 2), laneWidth * 0.8, noteHeight, [10]);
             ctx.fill();
-            
             ctx.shadowBlur = 0;
         }
         
-        // --- Note Handling ---
+        // --- Note Handling for Creator ---
         function handleNotes(elapsedTime) {
             const pixelsPerSecond = canvas.height / GAME_SPEED;
             const hitLineY = canvas.height * HIT_LINE_Y_POSITION;
 
             for (let i = notes.length - 1; i >= 0; i--) {
                 const note = notes[i];
-                if (!note.active) continue;
-
-                const effectiveElapsedTime = elapsedTime;
-                const timeToHit = note.hitTime - effectiveElapsedTime;
+                const timeToHit = note.hitTime - elapsedTime;
                 const distanceFromHitLine = timeToHit * pixelsPerSecond;
                 note.y = hitLineY - distanceFromHitLine;
 
-                if (note.y > -noteHeight && note.y < canvas.height && note.hittable) {
+                if (note.y > canvas.height + noteHeight) {
+                    notes.splice(i, 1); // Remove notes that have gone off-screen
+                } else if (note.y > -noteHeight) {
                     drawNote(note);
-                }
-
-                if (timeToHit < -0.2 && note.hittable) {
-                    note.hittable = false;
-                    if (gameMode === 'playing') {
-                        resetStreak(note.lane);
-                    }
                 }
             }
         }
-
-        // --- Player Input ---
+        
+        // --- Player Input and Recording ---
         function handleKeyPress(e) {
+            if (gameMode !== 'creating' || isPaused) return;
             const key = e.key.toLowerCase();
-
-            if (key === 'p' && gameMode !== 'menu') {
-                togglePause();
-                return;
-            }
-
-            if (gameMode === 'menu' || isPaused) return;
-
             if (key in KEY_MAPPINGS) {
                 const lane = KEY_MAPPINGS[key];
-                checkHit(lane);
-                animateKey(lane);
+                recordHit(lane);
             }
         }
         
@@ -570,169 +317,81 @@
             setTimeout(() => keyDisplay.classList.remove('active'), 100);
         }
 
-        function checkHit(lane) {
-            const hitLineY = canvas.height * HIT_LINE_Y_POSITION;
-            const perfectRange = noteHeight; 
+        function recordHit(lane) {
+            if (!audioPlayer || audioPlayer.paused) return;
             
-            let hit = false;
-
-            for (let i = notes.length - 1; i >= 0; i--) {
-                const note = notes[i];
-                if (note.lane === lane && note.hittable) {
-                    const distance = Math.abs(note.y - hitLineY);
-                    
-                    if (distance <= perfectRange) {
-                        if (gameMode === 'playing') {
-                            score += 10;
-                            streak++;
-                            notesHit++;
-                            if (streak > maxStreak) maxStreak = streak;
-                            showHitFeedback(lane, "Perfect!");
-                        }
-                        note.hittable = false;
-                        hit = true;
-                        break;
-                    }
-                }
-            }
-
-            if (hit) {
-                synth.triggerAttackRelease("C1", "8n");
-                if (gameMode === 'playing') {
-                    updateScoreDisplay();
-                    updateStreakDisplay();
-                }
-            }
-        }
-        
-        function showHitFeedback(lane, text) {
-            const feedback = document.createElement('div');
-            feedback.textContent = text;
-            feedback.style.position = 'absolute';
-            feedback.style.left = `${lane * laneWidth + laneWidth / 2}px`;
-            feedback.style.bottom = `${(1 - HIT_LINE_Y_POSITION) * 100 + 2}%`;
-            feedback.style.transform = 'translateX(-50%)';
-            feedback.style.color = NOTE_COLORS[lane];
-            feedback.style.fontSize = '1.5rem';
-            feedback.style.fontWeight = 'bold';
-            feedback.style.textShadow = `0 0 10px ${NOTE_COLORS[lane]}`;
-            feedback.style.pointerEvents = 'none';
-            feedback.style.transition = 'opacity 0.5s, transform 0.5s';
+            const hitTime = audioPlayer.currentTime;
             
-            document.querySelector('.game-container').appendChild(feedback);
+            recordedBeatmap.push({ lane: lane, time: hitTime });
             
-            setTimeout(() => {
-                feedback.style.opacity = '0';
-                feedback.style.transform = 'translate(-50%, -50px)';
-            }, 0);
-            
-            setTimeout(() => {
-                feedback.remove();
-            }, 500);
+            notes.push({ lane: lane, hitTime: hitTime, y: 0, color: NOTE_COLORS[lane] });
+
+            updateNoteCountDisplay();
+            animateKey(lane);
         }
 
-        // --- Score and Streak ---
-        function updateScoreDisplay() {
-            scoreDisplay.textContent = `Score: ${Math.max(0, score)}`;
+        function updateNoteCountDisplay() {
+            noteCountDisplay.textContent = `Notes: ${recordedBeatmap.length}`;
         }
 
-        function updateStreakDisplay() {
-            streakDisplay.textContent = `Streak: ${streak}`;
-        }
+        // --- Quantization and File Generation ---
+        function quantizeBeatmap(beatmap, bpm) {
+            const beatDuration = 60 / bpm;
+            const quantizationStep = beatDuration / 4; // Quantize to 1/16th notes
+            const quantizedMap = [];
+            const addedTimestamps = new Set();
 
-        function resetStreak(missedLane) {
-            showHitFeedback(missedLane, "Miss");
-            streak = 0;
-            updateStreakDisplay();
-        }
-        
-        // --- Star Rating and High Score Logic ---
-        function getStarRating(percentage) {
-            let stars = 0;
-            if (percentage >= 100) stars = 5;
-            else if (percentage >= 90) stars = 4;
-            else if (percentage >= 75) stars = 3;
-            else if (percentage >= 50) stars = 2;
-            else if (percentage > 0) stars = 1;
-            
-            const starString = '⭐️'.repeat(stars) + '☆'.repeat(5 - stars);
-            return { stars, starString };
-        }
-
-        function updateSongStatsDisplay() {
-            if (!selectedSongData) {
-                highScoreDisplay.innerHTML = '';
-                return;
-            }
-            const statKey = `${selectedSongData.title}-${currentDifficulty}`;
-            const stats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            const starString = '⭐️'.repeat(stats.stars) + '☆'.repeat(5 - stats.stars);
-
-            highScoreDisplay.innerHTML = `High Score: ${stats.score}<br>Best: ${starString}`;
-        }
-
-        // --- Game State Management ---
-        function togglePause() {
-            if (gameMode !== 'playing') return;
-            isPaused = !isPaused;
-
-            if (isPaused) {
-                cancelAnimationFrame(animationFrameId);
-                if (audioPlayer) audioPlayer.pause();
+            beatmap.forEach(note => {
+                const quantizedTime = Math.round(note.time / quantizationStep) * quantizationStep;
+                const roundedTime = parseFloat(quantizedTime.toFixed(4));
                 
-                if (selectedSongData) {
-                    pauseSongTitle.textContent = `"${selectedSongData.title}"`;
-                    pauseArtistName.textContent = `by ${selectedSongData.artist}`;
+                // Prevent multiple notes from snapping to the exact same timestamp in the same lane
+                const key = `${roundedTime}-${note.lane}`;
+                if (!addedTimestamps.has(key)) {
+                    quantizedMap.push({ lane: note.lane, time: roundedTime });
+                    addedTimestamps.add(key);
                 }
-                
-                pauseDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty}`;
-                pauseScreen.style.display = 'flex';
-            } else {
-                lastFrameTime = performance.now();
-                gameLoop();
-                if (audioPlayer) audioPlayer.play();
-                pauseScreen.style.display = 'none';
-            }
+            });
+
+            // Sort by time, as quantization might change the order slightly
+            return quantizedMap.sort((a,b) => a.time - b.time);
         }
 
-        function gameOver() {
-            if (gameMode !== 'playing') return;
+        function downloadJson(data, filename) {
+            const jsonString = JSON.stringify(data, null, 4);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function generateBeatmapFile() {
             gameMode = 'menu';
-            isPaused = false;
-            if (audioPlayer) {
-                audioPlayer.pause();
-            }
+            if (audioPlayer) audioPlayer.pause();
             cancelAnimationFrame(animationFrameId);
 
-            const accuracy = totalNotes > 0 ? (notesHit / totalNotes) * 100 : 0;
-            const { stars, starString } = getStarRating(accuracy);
-            starRatingDisplay.textContent = starString;
-
-            const statKey = `${selectedSongData.title}-${currentDifficulty}`;
-            const bestStats = JSON.parse(localStorage.getItem(statKey)) || { score: 0, stars: 0 };
-            let isNewHighScore = false;
-
-            if (score > bestStats.score) {
-                bestStats.score = score;
-                isNewHighScore = true;
-            }
-            if (stars > bestStats.stars) {
-                bestStats.stars = stars;
-            }
-            localStorage.setItem(statKey, JSON.stringify(bestStats));
-
-            const gameOverTitle = gameOverScreen.querySelector('h1');
-            if (isNewHighScore) {
-                gameOverTitle.textContent = "New High Score!";
-            } else {
-                gameOverTitle.textContent = "Game Over";
+            const bpm = parseFloat(bpmInput.value);
+            if (!bpm || bpm <= 0) {
+                alert("Invalid BPM. Could not generate beatmap.");
+                goToMainMenu();
+                return;
             }
 
-            finalScoreDisplay.textContent = `Final Score: ${Math.max(0, score)}`;
-            highScoreResultDisplay.textContent = `High Score: ${bestStats.score}`;
-            finalStreakDisplay.textContent = `Highest Streak: ${maxStreak}`;
-            gameOverDifficultyDisplay.textContent = `Difficulty: ${currentDifficulty} (${accuracy.toFixed(2)}%)`;
-            gameOverScreen.style.display = 'flex';
+            const quantizedNotes = quantizeBeatmap(recordedBeatmap, bpm);
+
+            const resultObject = {
+                [currentDifficulty]: quantizedNotes
+            };
+            
+            downloadJson(resultObject, 'beatmap.json');
+
+            resultsScreen.style.display = 'flex';
+            pauseButton.style.display = 'none';
         }
         
         function goToMainMenu() {
@@ -740,135 +399,70 @@
             isPaused = false;
             if (audioPlayer) {
                 audioPlayer.pause();
-                audioPlayer.removeEventListener('ended', gameOver);
+                audioPlayer.removeEventListener('ended', generateBeatmapFile);
                 audioPlayer = null;
             }
+            if(audioBlobUrl) URL.revokeObjectURL(audioBlobUrl);
+            audioBlobUrl = null;
+
             cancelAnimationFrame(animationFrameId);
             
-            gameOverScreen.style.display = 'none';
-            pauseScreen.style.display = 'none';
+            resultsScreen.style.display = 'none';
             startScreen.style.display = 'flex';
-            
-            updateSongStatsDisplay();
+            pauseButton.style.display = 'none';
+            songUploader.value = '';
+            bpmInput.value = '';
+            startButton.disabled = true;
+            recordedBeatmap = [];
+            updateNoteCountDisplay();
         }
         
         // --- Event Listeners ---
+        function checkInputs() {
+            const hasFile = songUploader.files.length > 0;
+            const hasBpm = bpmInput.value && parseFloat(bpmInput.value) > 0;
+            startButton.disabled = !(hasFile && hasBpm);
+        }
+
         window.addEventListener('resize', resizeCanvas);
         document.addEventListener('keydown', handleKeyPress);
+        songUploader.addEventListener('change', checkInputs);
+        bpmInput.addEventListener('input', checkInputs);
 
         difficultyButtons.forEach(button => {
             button.addEventListener('click', () => {
                 difficultyButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 currentDifficulty = button.dataset.difficulty;
-                updateSongStatsDisplay();
             });
-        });
-        
-        async function fetchAndLoadSong(songData) {
-             try {
-                 const audioResponse = await fetch(songData.audioUrl);
-                 if (!audioResponse.ok) throw new Error(`Failed to fetch audio file: ${audioResponse.statusText}`);
-                 const audioBlob = await audioResponse.blob();
-                 
-                 audioBlobUrl = URL.createObjectURL(audioBlob);
-
-                 const beatmapResponse = await fetch(songData.beatmapUrl);
-                 if (!beatmapResponse.ok) throw new Error(`Failed to fetch beatmap file: ${beatmapResponse.status}`);
-                 beatData = await beatmapResponse.json();
-                 
-                 startButton.disabled = false;
-                 alert(`'${songData.title}' is loaded and ready!`);
-
-             } catch(error) {
-                 console.error("Error loading song:", error);
-                 alert("Failed to load the selected song. Check the server and console for errors.");
-             }
-        }
-
-        async function loadSongList() {
-            try {
-                const response = await fetch('./songs.json');
-                if (!response.ok) throw new Error(`Server responded with ${response.status}`);
-                
-                const data = await response.json();
-                songList = data.songs;
-
-                if (songList.length === 0) {
-                    alert("No songs found in the database (songs.json).");
-                    return;
-                }
-
-                songSelector.innerHTML = '<option value="">-- Select a Song --</option>';
-                songList.forEach((song, index) => {
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `${song.title} - ${song.artist}`;
-                    songSelector.appendChild(option);
-                });
-                songSelector.style.display = 'block';
-                startButton.disabled = true;
-
-            } catch (error) {
-                console.error("Error loading song list:", error);
-                alert("Failed to load song list from songs.json. Make sure the file exists and is formatted correctly.");
-            }
-        }
-
-        songSelector.addEventListener('change', (event) => {
-            const selectedIndex = event.target.value;
-            if (selectedIndex) {
-                selectedSongData = songList[selectedIndex];
-                fetchAndLoadSong(selectedSongData);
-                updateSongStatsDisplay();
-            } else {
-                selectedSongData = null;
-                startButton.disabled = true;
-                updateSongStatsDisplay();
-            }
         });
 
         startButton.addEventListener('click', () => {
-            safeStartTone();
-            startScreen.style.display = 'none';
-            init();
-        });
-        
-        function safeStartTone() {
-            if (Tone.context.state !== 'running') {
+             if (Tone.context.state !== 'running') {
                 Tone.start();
             }
-        }
-
-        playAgainButton.addEventListener('click', () => {
-            gameOverScreen.style.display = 'none';
-            init();
+            initCreator();
         });
-        mainMenuButtonGameOver.addEventListener('click', goToMainMenu);
+        
         mainMenuButton.addEventListener('click', goToMainMenu);
-        pauseButton.addEventListener('click', togglePause);
-        resumeButton.addEventListener('click', togglePause);
         
         touchLanes.forEach(laneElement => {
             const lane = parseInt(laneElement.dataset.lane, 10);
             const handleTap = (event) => {
                 event.preventDefault();
-                if (gameMode === 'menu' || isPaused) return;
-                checkHit(lane);
-                animateKey(lane);
+                if (gameMode !== 'creating' || isPaused) return;
+                recordHit(lane);
             };
             laneElement.addEventListener('mousedown', handleTap);
             laneElement.addEventListener('touchstart', handleTap);
         });
 
         // --- Initial Setup ---
-        window.onload = _=> {
+        window.onload = () => {
             resizeCanvas();
             drawFretboard();
             drawHitLine();
-            loadSongList();
         };
-
     </script>
 </body>
 </html>
